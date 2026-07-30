@@ -1223,7 +1223,8 @@ cp AppBundle/Info.plist "$APP/Contents/"
 cp AppBundle/main.tiff "$APP/Contents/Resources/"
 
 # SPM 리소스 번들 (변환 사전 등) — Bundle.module이 Contents/Resources에서 찾는다
-find .build/release -maxdepth 1 -name '*.bundle' -print -exec cp -R {} "$APP/Contents/Resources/" \;
+# -L 필수: .build/release는 심링크라 기본 -P 정책으로는 find가 안으로 못 들어간다
+find -L .build/release -maxdepth 1 -name '*.bundle' -print -exec cp -R {} "$APP/Contents/Resources/" \;
 
 codesign --force --deep --sign - "$APP"
 echo "built: $APP"
