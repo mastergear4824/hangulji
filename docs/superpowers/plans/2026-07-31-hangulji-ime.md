@@ -479,8 +479,11 @@ final class KanaMapperTests: XCTestCase {
     func testMRow()          { XCTAssertEqual(kana("마미무메모먀뮤묘"), "まみむめもみゃみゅみょ") }
     func testRRow()          { XCTAssertEqual(kana("라리루레로랴류료"), "らりるれろりゃりゅりょ") }
 
-    // 받침 (스펙 §4.1)
-    func testFinalN()        { XCTAssertEqual(kana("간"), "かん") }
+    // 받침 (스펙 §4.1) — 청탁 규칙은 받침과 무관: 칸=かん, 간=がん
+    func testFinalN()        {
+        XCTAssertEqual(kana("칸"), "かん")
+        XCTAssertEqual(kana("간"), "がん")
+    }
     func testFinalSSokuon()  { XCTAssertEqual(kana("삿포로"), "さっぽろ") }
     func testFinalAliases()  {
         XCTAssertEqual(kana("혹카이도"), "ほっかいど")   // 받침 ㄱ → っ
@@ -750,13 +753,13 @@ final class HanguljiComposerTests: XCTestCase {
         XCTAssertEqual(kana("xhdnzydnsldlzlaktm"), "とうきょうにいきます")   // 토우쿄우니이키마스
         XCTAssertEqual(kana("dkfl rkxhdnrhwkdlaktm".replacingOccurrences(of: " ", with: "")),
                        "ありがとうございます")                                // 아리가토우고자이마스
-        XCTAssertEqual(kana("rhsslclgk"), "こんにちは")                       // 곤니치하 (は는 철자대로 '하')
+        XCTAssertEqual(kana("zhsslclgk"), "こんにちは")                       // 콘니치하 (こ=콘, は는 철자대로 '하')
         XCTAssertEqual(kana("rktRhdn"), "がっこう")                           // 갓코우
         XCTAssertEqual(kana("tkttlqnfl"), "さっしぶり")                       // 삿시부리 (받침 ㅅ→っ; 부=qn)
         XCTAssertEqual(kana("dhspdptkd"), "おねえさん")                       // 오네에상 (네=sp; 장음+받침ㅇ→ん)
         XCTAssertEqual(kana("dhdhtkzk"), "おおさか")                          // 오오사카
         XCTAssertEqual(kana("dpdlrk"), "えいが")                              // 에이가
-        XCTAssertEqual(kana("rkdnjdlaktm"), "かをいます")                     // 가워이마스 → を 확인
+        XCTAssertEqual(kana("rkdnjdlaktm"), "がをいます")                     // 가워이마스 → を 확인 (가=が)
     }
 }
 ```
@@ -1696,7 +1699,7 @@ macOS용 일본어 입력기 — 한글로 일본어 발음(가나 철자)을 �
 ## 입력 규칙 요약
 
 - 가나 철자에 충실: 카=か 가=が (위치 무관), 장음은 그대로 (토우쿄우=とうきょう)
-- 받침 ㅅ=っ (삿포로), 받침 ㄴ=ん (간=かん) — 간이=かんい / 가니=かに 자동 구분
+- 받침 ㅅ=っ (삿포로), 받침 ㄴ=ん (칸=かん) — 칸이=かんい / 카니=かに 자동 구분
 - 관용 별칭: 홋까이도/혹카이도, 쓰·쯔=つ, 망가=まんが, 곤니찌와의 찌=ち
 - を=워, は=하, へ=헤 (조사도 철자대로)
 - ぢ=띠, づ=뜨 / ティ=티 ディ=디 トゥ=투 ファ=화 등
