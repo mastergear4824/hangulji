@@ -36,7 +36,10 @@ final class KanaMapperTests: XCTestCase {
     func testRRow()          { XCTAssertEqual(kana("라리루레로랴류료"), "らりるれろりゃりゅりょ") }
 
     // 받침 (스펙 §4.1)
-    func testFinalN()        { XCTAssertEqual(kana("간"), "がん") }
+    func testFinalN() {
+        XCTAssertEqual(kana("칸"), "かん")   // .k (unvoiced) + final
+        XCTAssertEqual(kana("간"), "がん")   // .g (voiced) + final
+    }
     func testFinalSSokuon()  { XCTAssertEqual(kana("삿포로"), "さっぽろ") }
     func testFinalAliases()  {
         XCTAssertEqual(kana("혹카이도"), "ほっかいど")   // 받침 ㄱ → っ
