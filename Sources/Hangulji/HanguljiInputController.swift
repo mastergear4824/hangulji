@@ -116,11 +116,23 @@ public class HanguljiInputController: IMKInputController {
 
     // 포커스 이동/클릭 시 조합 커밋
     public override func commitComposition(_ sender: Any!) {
-        if let client = sender as? IMKTextInput { commitComposition(to: client) }
+        if let client = sender as? IMKTextInput {
+            commitComposition(to: client)
+        } else {
+            // 클라이언트에 접근 불가(15.2류 리그레션 경로): 상태만 안전하게 리셋
+            composer.clear()
+            mode = .composing
+            panel.hide()
+        }
     }
 
     public override func deactivateServer(_ sender: Any!) {
-        if let client = sender as? IMKTextInput { commitComposition(to: client) }
+        if let client = sender as? IMKTextInput {
+            commitComposition(to: client)
+        } else {
+            composer.clear()
+            mode = .composing
+        }
         panel.hide()
     }
 
