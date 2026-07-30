@@ -20,4 +20,11 @@ final class KanjiConverterTests: XCTestCase {
         let candidates = converter.candidateList(for: "とうきょう", max: 9)
         XCTAssertEqual(candidates.count, Set(candidates).count)
     }
+    func testFallbacksSurviveManyCandidates() {
+        let converter = KanjiConverter()
+        let candidates = converter.candidateList(for: "か", max: 9)
+        XCTAssertTrue(candidates.contains("か"), "candidates: \(candidates)")
+        XCTAssertTrue(candidates.contains("カ"), "candidates: \(candidates)")
+        XCTAssertLessThanOrEqual(candidates.count, 11)
+    }
 }
