@@ -62,7 +62,7 @@ final class HanguljiComposerTests: XCTestCase {
         XCTAssertEqual(kana("dkfl rkxhdnrhwkdlaktm".replacingOccurrences(of: " ", with: "")),
                        "ありがとうございます")                                // 아리가토우고자이마스
         XCTAssertEqual(kana("zhsslclgk"), "こんにちは")                       // 콘니치하 (こ=콘, は는 철자대로 '하')
-        XCTAssertEqual(kana("rktRhdn"), "がっこう")                           // 갓코우
+        XCTAssertEqual(kana("rktRhdn"), "がっこう")                           // 갓꼬우 (R=ㄲ는 か행 별칭, 출력은 그대로 がっこう)
         XCTAssertEqual(kana("tkttlqnfl"), "さっしぶり")                       // 삿시부리 (받침 ㅅ→っ; 부=qn)
         XCTAssertEqual(kana("dhspdptkd"), "おねえさん")                       // 오네에상 (네=sp; 장음+받침ㅇ→ん)
         XCTAssertEqual(kana("dhdhtkzk"), "おおさか")                          // 오오사카

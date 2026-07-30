@@ -4,6 +4,8 @@ import InputMethodKit
 import HanguljiCore
 import HanguljiConversion
 
+/// Objective-C 이름을 고정해 Info.plist의 InputMethodServerControllerClass가
+/// 모듈 접두어 없이 이 클래스를 찾을 수 있도록 함
 @objc(HanguljiInputController)
 public class HanguljiInputController: IMKInputController {
     private var composer = HanguljiComposer()
@@ -185,6 +187,12 @@ public class HanguljiInputController: IMKInputController {
                 commitCandidate(candidates[index], client)
                 _ = composer.insert(ch)
                 updateMarkedText(client)
+                return true
+            }
+            // 일본어 구두점: 후보 확정 후 。/、 삽입 (스펙 §3)
+            if ch == "." || ch == "," {
+                commitCandidate(candidates[index], client)
+                insert(ch == "." ? "。" : "、", to: client)
                 return true
             }
         }
