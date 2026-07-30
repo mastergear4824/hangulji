@@ -1051,12 +1051,18 @@ public final class KanjiConverter {
         )
         let results = converter.requestCandidates(composing, options: options)
 
+        // 한자 후보를 max개로 자른 뒤 가나/가타카나 폴백을 보장 삽입.
+        // (mainResults는 N_best로 안 묶임 — 통짜 prefix는 폴백을 잘라낼 수 있다)
         var seen = Set<String>()
-        var list: [String] = []
-        for text in results.mainResults.map(\.text) + [reading, reading.toKatakana()] {
-            if seen.insert(text).inserted { list.append(text) }
+        var kanji: [String] = []
+        for text in results.mainResults.map(\.text) {
+            if seen.insert(text).inserted { kanji.append(text) }
         }
-        return Array(list.prefix(max + 2))  // 한자 max개 + 가나/가타카나 폴백
+        var list = Array(kanji.prefix(max))
+        for fallback in [reading, reading.toKatakana()] where !list.contains(fallback) {
+            list.append(fallback)
+        }
+        return list
     }
 }
 ```
