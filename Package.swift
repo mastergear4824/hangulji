@@ -21,6 +21,11 @@ let package = Package(
             ],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
+        .executableTarget(
+            name: "Hangulji",
+            dependencies: ["HanguljiCore", "HanguljiConversion"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
         .testTarget(
             name: "HanguljiCoreTests",
             dependencies: ["HanguljiCore"],
