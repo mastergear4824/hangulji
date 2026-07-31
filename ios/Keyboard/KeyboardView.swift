@@ -69,10 +69,10 @@ struct KeyboardView: View {
                         ForEach(Array(model.candidates.enumerated()), id: \.offset) { index, candidate in
                             Button { model.tapCandidate(index) } label: {
                                 Text(candidate)
-                                    .font(.system(size: 20))
+                                    .font(.system(size: 18))
                                     .foregroundColor(.primary)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
+                                    .padding(.horizontal, 9)
+                                    .padding(.vertical, 2)
                                     .background(index == model.selectedIndex
                                                 ? Color(UIColor.systemGray4) : Color.clear)
                                     .clipShape(Capsule())
@@ -84,7 +84,7 @@ struct KeyboardView: View {
                 }
             }
         }
-        .frame(height: 40)
+        .frame(height: 28)
         .background(Color.clear)
     }
 

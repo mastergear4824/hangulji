@@ -21,7 +21,7 @@ final class KeyboardViewController: UIInputViewController, TextOutput {
             hostController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             hostController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            view.heightAnchor.constraint(equalToConstant: 260),
+            view.heightAnchor.constraint(equalToConstant: 248),
         ])
         hostController.didMove(toParent: self)
     }
