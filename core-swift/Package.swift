@@ -2,8 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "hangulji",
+    name: "hangulji-core",
     platforms: [.macOS(.v14)],
+    products: [
+        .library(name: "HanguljiCore", targets: ["HanguljiCore"]),
+        .library(name: "HanguljiConversion", targets: ["HanguljiConversion"]),
+    ],
     dependencies: [
         .package(url: "https://github.com/azooKey/AzooKeyKanaKanjiConverter", .upToNextMinor(from: "0.11.0")),
     ],
@@ -19,11 +23,6 @@ let package = Package(
                 .product(name: "KanaKanjiConverterModuleWithDefaultDictionary",
                          package: "AzooKeyKanaKanjiConverter"),
             ],
-            swiftSettings: [.swiftLanguageMode(.v5)]
-        ),
-        .executableTarget(
-            name: "Hangulji",
-            dependencies: ["HanguljiCore", "HanguljiConversion"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(

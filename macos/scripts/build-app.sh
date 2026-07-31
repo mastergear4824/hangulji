@@ -1,5 +1,5 @@
 #!/bin/bash
-# scripts/build-app.sh — swift build + .app 번들 조립 + ad-hoc 서명
+# macos/scripts/build-app.sh — swift build + .app 번들 조립 + ad-hoc 서명
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
