@@ -1,0 +1,303 @@
+# 한글지 — Google 일본어 입력용 커스텀 로마자 테이블
+# spec/mapping.tsv 에서 생성됨 — 수기 수정 금지. 재생성: swift spec/generators/gen-mozc-table.swift
+# 형식: input<TAB>output<TAB>next_input
+rk	が	
+ri	ぎゃ	
+rp	げ	
+rh	ご	
+ry	ぎょ	
+rn	ぐ	
+rb	ぎゅ	
+rm	ぐ	
+rl	ぎ	
+Rk	か	
+Ri	きゃ	
+Rp	け	
+Rh	こ	
+Ry	きょ	
+Rn	く	
+Rb	きゅ	
+Rm	く	
+Rl	き	
+sk	な	
+si	にゃ	
+sp	ね	
+sh	の	
+sy	にょ	
+sn	ぬ	
+sb	にゅ	
+sm	ぬ	
+sl	に	
+ek	だ	
+ep	で	
+eh	ど	
+en	どぅ	
+em	どぅ	
+el	でぃ	
+Ek	た	
+Ep	て	
+Eh	と	
+Em	づ	
+El	ぢ	
+fk	ら	
+fi	りゃ	
+fp	れ	
+fh	ろ	
+fy	りょ	
+fn	る	
+fb	りゅ	
+fm	る	
+fl	り	
+ak	ま	
+ai	みゃ	
+ap	め	
+ah	も	
+ay	みょ	
+an	む	
+ab	みゅ	
+am	む	
+al	み	
+qk	ば	
+qi	びゃ	
+qp	べ	
+qh	ぼ	
+qy	びょ	
+qn	ぶ	
+qb	びゅ	
+qm	ぶ	
+ql	び	
+Qk	ぱ	
+Qi	ぴゃ	
+Qp	ぺ	
+Qh	ぽ	
+Qy	ぴょ	
+Qn	ぷ	
+Qb	ぴゅ	
+Qm	ぷ	
+Ql	ぴ	
+tk	さ	
+ti	しゃ	
+tp	せ	
+th	そ	
+ty	しょ	
+tn	す	
+tb	しゅ	
+tm	す	
+tl	し	
+Tk	さ	
+Tp	せ	
+Th	そ	
+Tm	つ	
+Tl	し	
+dk	あ	
+di	や	
+dp	え	
+dh	お	
+dhk	わ	
+dy	よ	
+dn	う	
+dnj	を	
+dnp	うぇ	
+dnl	うぃ	
+db	ゆ	
+dl	い	
+wk	ざ	
+wi	じゃ	
+wp	ぜ	
+wh	ぞ	
+wy	じょ	
+wn	ず	
+wb	じゅ	
+wm	ず	
+wl	じ	
+Wk	ちゃ	
+Wy	ちょ	
+Wb	ちゅ	
+Wm	つ	
+Wl	ち	
+ck	ちゃ	
+ci	ちゃ	
+ch	ちょ	
+cy	ちょ	
+cn	ちゅ	
+cb	ちゅ	
+cm	つ	
+cl	ち	
+zk	か	
+zi	きゃ	
+zp	け	
+zh	こ	
+zy	きょ	
+zn	く	
+zb	きゅ	
+zm	く	
+zl	き	
+xk	た	
+xp	て	
+xh	と	
+xn	とぅ	
+xm	とぅ	
+xl	てぃ	
+vk	ぱ	
+vi	ぴゃ	
+vp	ぺ	
+vh	ぽ	
+vy	ぴょ	
+vn	ぷ	
+vb	ぴゅ	
+vm	ぷ	
+vl	ぴ	
+gk	は	
+gi	ひゃ	
+gp	へ	
+gh	ほ	
+ghk	ふぁ	
+gy	ひょ	
+gn	ふ	
+gnj	ふぉ	
+gnp	ふぇ	
+gnl	ふぃ	
+gb	ひゅ	
+gm	ふ	
+gl	ひ	
+a	ん	
+aq	ん	q
+aw	ん	w
+ae	ん	e
+ar	ん	r
+at	ん	t
+aa	ん	a
+as	ん	s
+ad	ん	d
+af	ん	f
+ag	ん	g
+az	ん	z
+ax	ん	x
+ac	ん	c
+av	ん	v
+aQ	ん	Q
+aW	ん	W
+aE	ん	E
+aR	ん	R
+aT	ん	T
+d	ん	
+dq	ん	q
+dw	ん	w
+de	ん	e
+dr	ん	r
+dt	ん	t
+da	ん	a
+ds	ん	s
+dd	ん	d
+df	ん	f
+dg	ん	g
+dz	ん	z
+dx	ん	x
+dc	ん	c
+dv	ん	v
+dQ	ん	Q
+dW	ん	W
+dE	ん	E
+dR	ん	R
+dT	ん	T
+e	っ	
+eq	っ	q
+ew	っ	w
+ee	っ	e
+er	っ	r
+et	っ	t
+ea	っ	a
+es	っ	s
+ed	っ	d
+ef	っ	f
+eg	っ	g
+ez	っ	z
+ex	っ	x
+ec	っ	c
+ev	っ	v
+eQ	っ	Q
+eW	っ	W
+eE	っ	E
+eR	っ	R
+eT	っ	T
+q	っ	
+qq	っ	q
+qw	っ	w
+qe	っ	e
+qr	っ	r
+qt	っ	t
+qa	っ	a
+qs	っ	s
+qd	っ	d
+qf	っ	f
+qg	っ	g
+qz	っ	z
+qx	っ	x
+qc	っ	c
+qv	っ	v
+qQ	っ	Q
+qW	っ	W
+qE	っ	E
+qR	っ	R
+qT	っ	T
+r	っ	
+rq	っ	q
+rw	っ	w
+re	っ	e
+rr	っ	r
+rt	っ	t
+ra	っ	a
+rs	っ	s
+rd	っ	d
+rf	っ	f
+rg	っ	g
+rz	っ	z
+rx	っ	x
+rc	っ	c
+rv	っ	v
+rQ	っ	Q
+rW	っ	W
+rE	っ	E
+rR	っ	R
+rT	っ	T
+s	ん	
+sq	ん	q
+sw	ん	w
+se	ん	e
+sr	ん	r
+st	ん	t
+sa	ん	a
+ss	ん	s
+sd	ん	d
+sf	ん	f
+sg	ん	g
+sz	ん	z
+sx	ん	x
+sc	ん	c
+sv	ん	v
+sQ	ん	Q
+sW	ん	W
+sE	ん	E
+sR	ん	R
+sT	ん	T
+t	っ	
+tq	っ	q
+tw	っ	w
+te	っ	e
+tr	っ	r
+tt	っ	t
+ta	っ	a
+ts	っ	s
+td	っ	d
+tf	っ	f
+tg	っ	g
+tz	っ	z
+tx	っ	x
+tc	っ	c
+tv	っ	v
+tQ	っ	Q
+tW	っ	W
+tE	っ	E
+tR	っ	R
+tT	っ	T
+-	ー	
