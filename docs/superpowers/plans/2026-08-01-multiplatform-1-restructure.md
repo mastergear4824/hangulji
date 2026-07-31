@@ -516,7 +516,7 @@ cd core-swift && swift run fixture-export
 python3 -c "import json;print(len(json.load(open('../spec/fixtures/kana.json'))), len(json.load(open('../spec/fixtures/composition.json'))))"
 ```
 
-Expected: 자기검증 통과(전 케이스), kana 38 / composition 8. **검증 실패 시 기대값(kana)이 진실** — hangul 표기나 keys 변환을 의심하고, 그래도 불일치하면 BLOCKED 보고 (KanaMapper 수정 금지).
+Expected: 자기검증 통과(전 케이스), kana 39(fullyMapped 38 + unmappable 1) / composition 8. **검증 실패 시 기대값(kana)이 진실** — hangul 표기나 keys 변환을 의심하고, 그래도 불일치하면 BLOCKED 보고 (KanaMapper 수정 금지).
 
 - [ ] **Step 3: FixtureTests.swift 작성** (`core-swift/Tests/HanguljiCoreTests/FixtureTests.swift`)
 
