@@ -6,6 +6,28 @@ private enum Plane {
     case letters, numeric, symbols, emoji
 }
 
+/// 롱프레스 팝업을 그리는 데 필요한 데이터 — 앵커 프리퍼런스로 row1 키에서 루트까지 흘려보낸다.
+/// keySlot의 zIndex로는 형제(candidateBar)를 이길 수 없어서, 팝업을 키 트리 안이 아니라
+/// KeyboardView 루트의 최상위 오버레이(overlayPreferenceValue)에서 그리기 위한 우회로.
+private struct CalloutData: Equatable {
+    let latin: String
+    let jamo: String
+    let variantJamo: String
+    let variantSelected: Bool
+    let anchor: Anchor<CGRect>
+
+    static func == (l: Self, r: Self) -> Bool {
+        l.latin == r.latin && l.variantSelected == r.variantSelected
+    }
+}
+
+private struct CalloutPreferenceKey: PreferenceKey {
+    static var defaultValue: CalloutData? = nil
+    static func reduce(value: inout CalloutData?, nextValue: () -> CalloutData?) {
+        value = nextValue() ?? value
+    }
+}
+
 struct KeyboardView: View {
     @ObservedObject var model: KeyboardModel
     weak var controller: KeyboardViewController?
@@ -15,6 +37,8 @@ struct KeyboardView: View {
     @State private var plane: Plane = .letters
     /// 롱프레스로 팝업 중인 row1 변형키의 latin(기본, 비시프트) 식별자 — 동시에 하나만 존재.
     @State private var calloutKey: String? = nil
+    /// 팝업이 떠 있는 동안의 선택 칸 — false=기본(왼쪽), true=변형(오른쪽). 팝업이 뜰 때마다 false로 리셋.
+    @State private var selectedVariant = false
 
     private let row1 = [("ㅂ", "q", "ㅃ", "Q"), ("ㅈ", "w", "ㅉ", "W"), ("ㄷ", "e", "ㄸ", "E"),
                         ("ㄱ", "r", "ㄲ", "R"), ("ㅅ", "t", "ㅆ", "T"), ("ㅛ", "y", "ㅛ", "y"),
@@ -82,6 +106,41 @@ struct KeyboardView: View {
         // 이상적 크기가 view.heightAnchor 제약과 어긋나 UIKit이 다른 높이로 렌더링할 수 있다.
         .frame(height: totalHeight, alignment: .top)
         .background(Color.clear)
+        // 롱프레스 팝업 — 트리 최상위 오버레이라 candidateBar를 포함한 모든 형제 위에 그려진다.
+        .overlayPreferenceValue(CalloutPreferenceKey.self) { data in
+            GeometryReader { proxy in
+                if let data {
+                    let rect = proxy[data.anchor]
+                    calloutPanel(data)
+                        .position(x: min(max(rect.midX, 55), proxy.size.width - 55),
+                                  y: rect.minY - 34)
+                }
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    /// 기본·변형 두 칸(44×44, 간격 4)을 담은 흰 패널 — 선택된 칸만 파란 배경 + 흰 글자.
+    private func calloutPanel(_ data: CalloutData) -> some View {
+        HStack(spacing: 4) {
+            variantCell(data.jamo, selected: !data.variantSelected)
+            variantCell(data.variantJamo, selected: data.variantSelected)
+        }
+        .padding(5)
+        .background(RoundedRectangle(cornerRadius: 10).fill(keyFillColor))
+        .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+    }
+
+    private func variantCell(_ text: String, selected: Bool) -> some View {
+        Text(text)
+            .font(.system(size: 24))
+            .foregroundColor(selected ? .white : .primary)
+            .frame(width: 44, height: 44)
+            .background {
+                if selected {
+                    RoundedRectangle(cornerRadius: 8).fill(Color(UIColor.systemBlue))
+                }
+            }
     }
 
     /// 4개 키 행 블록 + 하단 여백. 모든 판에서 barHeight + 4×keyHeight + 3×rowGap + bottomMargin = totalHeight.
@@ -101,7 +160,7 @@ struct KeyboardView: View {
 
     private var lettersPlane: some View {
         Group {
-            keySlot { row1Row }.zIndex(10)   // 팝업이 아래 행 위로 그려지도록
+            keySlot { row1Row }   // 팝업은 이제 루트 오버레이(overlayPreferenceValue)에서 그려짐
             keySlot { keyRow(row2).padding(.horizontal, 20) }
             keySlot {
                 HStack(spacing: 6) {
@@ -132,16 +191,15 @@ struct KeyboardView: View {
     /// 시프트가 이미 켜져 있으면 표시되는 글자 자체가 변형이라 더 보여줄 변형이 없으므로 롱프레스 불필요.
     private var row1Row: some View {
         HStack(spacing: 6) {
-            ForEach(Array(row1.enumerated()), id: \.offset) { index, tuple in
-                let (jamo, latin, shiftedJamo, shiftedLatin) = tuple
+            ForEach(row1, id: \.1) { jamo, latin, shiftedJamo, shiftedLatin in
                 if model.isShifted {
                     keyButton(shiftedJamo) { model.tapKey(Character(shiftedLatin)) }
                 } else if shiftedLatin != latin {
                     VariantKeyButton(jamo: jamo, latin: latin,
                                      variantJamo: shiftedJamo, variantLatin: shiftedLatin,
                                      keyHeight: keyHeight, keyCornerRadius: keyCornerRadius,
-                                     keyFillColor: keyFillColor, isFirstInRow: index == 0,
-                                     calloutKey: $calloutKey) { ch in
+                                     keyFillColor: keyFillColor,
+                                     calloutKey: $calloutKey, selectedVariant: $selectedVariant) { ch in
                         model.tapKey(ch)
                     }
                 } else {
@@ -403,6 +461,8 @@ struct KeyboardView: View {
 /// 짧게 누르고 떼면 기본(latin) 입력. 길게 눌러 팝업이 뜨면 처음엔 기본 칸이 선택된 채 시작하고,
 /// 오른쪽으로 반 칸 이상 드래그하면 변형 칸으로, 다시 왼쪽으로 돌아오면 기본 칸으로 선택이 바뀌며,
 /// 뗀 시점의 선택 칸이 입력된다.
+/// 팝업 자체는 이 뷰가 그리지 않는다 — anchorPreference로 위치(bounds)만 흘려보내고, 실제 렌더는
+/// KeyboardView 루트의 overlayPreferenceValue가 맡는다(형제 뷰 위로 확실히 그려지도록).
 private struct VariantKeyButton: View {
     let jamo: String
     let latin: String
@@ -411,14 +471,12 @@ private struct VariantKeyButton: View {
     let keyHeight: CGFloat
     let keyCornerRadius: CGFloat
     let keyFillColor: Color
-    /// 첫 키(ㅂ)는 팝업을 중앙 정렬하면 왼쪽으로 넘쳐 화면 밖으로 나가므로 왼쪽 정렬로 고정.
-    let isFirstInRow: Bool
     @Binding var calloutKey: String?
+    @Binding var selectedVariant: Bool
     let onTap: (Character) -> Void
 
     @State private var pressToken: UUID?
     @State private var isPressed = false
-    @State private var selectedVariant = false
 
     private static let holdThreshold: TimeInterval = 0.35
     private static let dragThreshold: CGFloat = 22
@@ -433,14 +491,13 @@ private struct VariantKeyButton: View {
             .overlay(isPressed ? Color.black.opacity(0.12) : Color.clear)
             .cornerRadius(keyCornerRadius)
             .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
-            .overlay(alignment: isFirstInRow ? .topLeading : .top) {
-                if isShowingCallout {
-                    calloutPanel
-                        .offset(y: -58)
-                        .allowsHitTesting(false)
-                }
-            }
             .contentShape(Rectangle())
+            .anchorPreference(key: CalloutPreferenceKey.self, value: .bounds) { anchor in
+                isShowingCallout
+                    ? CalloutData(latin: latin, jamo: jamo, variantJamo: variantJamo,
+                                   variantSelected: selectedVariant, anchor: anchor)
+                    : nil
+            }
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
@@ -470,28 +527,5 @@ private struct VariantKeyButton: View {
                         selectedVariant = false
                     }
             )
-    }
-
-    /// 기본·변형 두 칸(44×44, 간격 4)을 담은 흰 패널 — 선택된 칸만 파란 배경 + 흰 글자.
-    private var calloutPanel: some View {
-        HStack(spacing: 4) {
-            variantCell(jamo, selected: !selectedVariant)
-            variantCell(variantJamo, selected: selectedVariant)
-        }
-        .padding(5)
-        .background(RoundedRectangle(cornerRadius: 10).fill(keyFillColor))
-        .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
-    }
-
-    private func variantCell(_ text: String, selected: Bool) -> some View {
-        Text(text)
-            .font(.system(size: 24))
-            .foregroundColor(selected ? .white : .primary)
-            .frame(width: 44, height: 44)
-            .background {
-                if selected {
-                    RoundedRectangle(cornerRadius: 8).fill(Color(UIColor.systemBlue))
-                }
-            }
     }
 }
