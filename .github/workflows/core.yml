@@ -37,18 +37,26 @@ jobs:
         with:
           path: ios/build
           key: ios-${{ runner.os }}-${{ hashFiles('core-swift/Package.resolved') }}
-      # 주: 러너의 시뮬레이터 기기명은 로컬(iPhone 17)과 다를 수 있어 iPhone 16으로 고정.
-      # 잡 실패 시 `xcrun simctl list devices available` 스텝을 추가해 실제 기기명 확인 후 조정.
+      # 러너 이미지마다 시뮬레이터 기기명이 달라 하드코딩 대신 동적으로 선택한다
+      - name: Select simulator
+        id: sim
+        shell: bash
+        run: |
+          xcrun simctl list devices available | grep iPhone || true
+          DEVICE=$(xcrun simctl list devices available | grep -m1 -oE 'iPhone [A-Za-z0-9 ]+' | sed 's/ *$//')
+          if [ -z "$DEVICE" ]; then echo "사용 가능한 iPhone 시뮬레이터 없음"; exit 1; fi
+          echo "device=${DEVICE}" >> "$GITHUB_OUTPUT"
+          echo "selected: ${DEVICE}"
       - name: Build (simulator)
         shell: bash
         run: |
           cd ios && xcodegen generate
           xcodebuild -project Hangulji.xcodeproj -scheme HanguljiApp \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO build | tail -5
       - name: Model tests
         shell: bash
         run: |
           cd ios && xcodebuild -project Hangulji.xcodeproj -scheme HanguljiApp \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO test | tail -5
