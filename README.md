@@ -27,7 +27,7 @@
 ```bash
 git clone https://github.com/mastergear4824/hangulji.git
 cd hangulji
-./scripts/install-dev.sh
+./macos/scripts/install-dev.sh
 ```
 
 첫 빌드는 변환 사전을 내려받아 몇 분 걸릴 수 있습니다. 설치 후:
@@ -104,7 +104,7 @@ cd hangulji
 | 입력 소스 목록에 한글지가 없음 | 로그아웃/로그인 후 다시 확인 (최초 등록 시 필요할 수 있음) |
 | 첫 한자 변환이 느림 | 정상 — 사전 로드 1회. 이후 즉시 |
 | 비밀번호 입력란에서 동작 안 함 | 정상 — macOS가 보안 입력에서 모든 서드파티 입력기를 우회함 |
-| 코드 수정 후 반영 안 됨 | `./scripts/install-dev.sh` 재실행 (killall 포함) |
+| 코드 수정 후 반영 안 됨 | `./macos/scripts/install-dev.sh` 재실행 (killall 포함) |
 | 매핑 안 되는 한글이 그대로 남음 | 의도된 동작 — 일본어에 없는 음절(예: 별)은 한글로 표시되어 오타를 알림 |
 
 ## 개발
