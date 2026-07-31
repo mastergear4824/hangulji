@@ -10,6 +10,7 @@ struct HanguljiApp: App {
 
 struct ContentView: View {
     @State private var testInput = ""
+    @FocusState private var testFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -20,12 +21,17 @@ struct ContentView: View {
                 }
                 Section("테스트") {
                     TextField("여기서 타이핑 테스트 (토우쿄우 → 変換 → 東京)", text: $testInput)
+                        .focused($testFocused)
                 }
                 Section("입력 규칙 요약") {
                     Text("카=か 가=が (위치 무관) · 받침ㅅ=っ · 받침ㄴ=ん · 장음은 철자대로(토우쿄우) · を=워 は=하")
                 }
             }
             .navigationTitle("한글지")
+        }
+        // 앱 진입 시 테스트 필드 자동 포커스 — 바로 타이핑 가능 + 무접촉 검증 루프에 필요
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { testFocused = true }
         }
         // 실측 검증용 — 키보드가 실제로 화면에 뜰 때 시스템이 보고하는 프레임 높이를 콘솔에 남긴다.
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
