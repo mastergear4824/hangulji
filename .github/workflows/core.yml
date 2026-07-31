@@ -37,6 +37,8 @@ jobs:
         with:
           path: ios/build
           key: ios-${{ runner.os }}-${{ hashFiles('core-swift/Package.resolved') }}
+      # 주: 러너의 시뮬레이터 기기명은 로컬(iPhone 17)과 다를 수 있어 iPhone 16으로 고정.
+      # 잡 실패 시 `xcrun simctl list devices available` 스텝을 추가해 실제 기기명 확인 후 조정.
       - name: Build (simulator)
         run: |
           cd ios && xcodegen generate
