@@ -17,8 +17,10 @@ final class KeyboardViewController: UIInputViewController, TextOutput {
         super.viewDidLoad()
         model.output = self
         view.backgroundColor = .clear   // 시스템 키보드 배경(블러)이 그대로 비치도록
+        // SwiftUI/UIKit 타이밍 이슈 회피 — 1회만 읽어서 값으로 전달 (동적 갱신 없음)
         let hostController = UIHostingController(
-            rootView: KeyboardView(model: model, controller: self))
+            rootView: KeyboardView(model: model, controller: self,
+                                    needsInputModeSwitchKey: needsInputModeSwitchKey))
         host = hostController
         hostController.view.backgroundColor = .clear
         addChild(hostController)

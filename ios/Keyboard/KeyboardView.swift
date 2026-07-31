@@ -1,9 +1,18 @@
 // ios/Keyboard/KeyboardView.swift
 import SwiftUI
 
+/// 키보드 판(plane) — UI 전용 상태. KeyboardModel은 이 개념을 모른다.
+private enum Plane {
+    case letters, numeric, symbols, emoji
+}
+
 struct KeyboardView: View {
     @ObservedObject var model: KeyboardModel
     weak var controller: KeyboardViewController?
+    /// viewDidLoad에서 1회만 읽어 전달됨 — SwiftUI/UIKit 타이밍 이슈 회피(코디네이터 지시).
+    let needsInputModeSwitchKey: Bool
+
+    @State private var plane: Plane = .letters
 
     private let row1 = [("ㅂ", "q", "ㅃ", "Q"), ("ㅈ", "w", "ㅉ", "W"), ("ㄷ", "e", "ㄸ", "E"),
                         ("ㄱ", "r", "ㄲ", "R"), ("ㅅ", "t", "ㅆ", "T"), ("ㅛ", "y", "ㅛ", "y"),
@@ -14,8 +23,26 @@ struct KeyboardView: View {
     private let row3 = [("ㅋ", "z"), ("ㅌ", "x"), ("ㅊ", "c"), ("ㅍ", "v"),
                         ("ㅠ", "b"), ("ㅜ", "n"), ("ㅡ", "m")]
 
+    private let emojiList: [String] = [
+        "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃",
+        "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "😋", "😜",
+        "🤪", "🤔", "🤨", "😎", "🥳", "😢", "😭", "😡", "😱", "🥺",
+        "👍", "👎", "👌", "✌️", "🤞", "🤙", "👋", "🙌", "👏", "🙏",
+        "💪", "👊", "✊", "🤝", "👉", "👆", "👇", "☝️", "🤚", "🖐️",
+        "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "💕", "💖",
+        "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
+        "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐴", "🦄",
+        "🍎", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍒", "🍑", "🍍",
+        "🥑", "🍔", "🍕", "🌭", "🍟", "🍿", "🍩", "🍰", "🍫", "☕️",
+        "⚽️", "🏀", "🏈", "⚾️", "🎾", "🏐", "🎱", "🎮", "🎲", "🎸",
+        "💡", "📱", "💻", "📷", "🎁", "✅", "❌", "⭐️", "✨", "🎉",
+    ]
+    private let emojiColumns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 8)
+
     private let keyHeight: CGFloat = 43
     private let keyCornerRadius: CGFloat = 4.6
+    /// 네이티브 키보드의 행 슬롯 높이 — 4개 슬롯(216pt) + 후보 바(44pt) = 260pt(키보드 창 높이)
+    private let slotHeight: CGFloat = 54
 
     // 시스템 키보드 톤 — 라이트: 흰 키/회색 특수키, 다크: 진회색 키/더 진한 특수키. 액센트(블루) 사용 금지.
     private var keyFillColor: Color {
@@ -41,6 +68,21 @@ struct KeyboardView: View {
     var body: some View {
         VStack(spacing: 0) {
             candidateBar            // height 44, unchanged content
+            switch plane {
+            case .letters: lettersPlane
+            case .numeric: numericPlane
+            case .symbols: symbolsPlane
+            case .emoji: emojiPlane
+            }
+        }
+        .padding(.horizontal, 3)
+        .background(Color.clear)
+    }
+
+    // MARK: Planes — 각 판은 정확히 216pt(4×54) 사용, 바 44pt와 합쳐 총 260pt 유지
+
+    private var lettersPlane: some View {
+        Group {
             keySlot { keyRow(row1.map { model.isShifted ? ($0.2, $0.3) : ($0.0, $0.1) }) }
             keySlot { keyRow(row2).padding(.horizontal, 20) }
             keySlot {
@@ -54,21 +96,96 @@ struct KeyboardView: View {
             }
             keySlot {
                 HStack(spacing: 6) {
-                    GlobeButton(controller: controller).frame(width: 46, height: keyHeight)
-                    specialKey("ー", width: 44) { model.tapSymbol("ー") }
+                    specialKey("123", width: 46) { plane = .numeric }
+                    // 시스템 지구본과 중복되므로, 다른 입력 소스가 실제로 있을 때만 표시
+                    if needsInputModeSwitchKey {
+                        GlobeButton(controller: controller).frame(width: 46, height: keyHeight)
+                    }
+                    specialKey("😊", width: 46) { plane = .emoji }
                     spaceKey
-                    specialKey("。", width: 44) { model.tapSymbol("。") }
                     specialKey("⏎", width: 88) { model.tapEnter() }
                 }
             }
         }
-        .padding(.horizontal, 3)
-        .background(Color.clear)
+    }
+
+    private var numericPlane: some View {
+        Group {
+            keySlot { symbolRow(["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]) }
+            keySlot { symbolRow(["-", "/", ":", ";", "(", ")", "¥", "&", "@", "\""]) }
+            keySlot {
+                HStack(spacing: 6) {
+                    specialKey("#+=", width: 46, fontSize: 15) { plane = .symbols }
+                    Spacer(minLength: 10)
+                    symbolRow(["。", "、", "?", "!", "ー", "'"])
+                    Spacer(minLength: 10)
+                    specialKey("⌫", width: 46) { model.tapBackspace() }
+                }
+            }
+            keySlot { backToLettersRow }
+        }
+    }
+
+    private var symbolsPlane: some View {
+        Group {
+            keySlot { symbolRow(["[", "]", "{", "}", "#", "%", "^", "*", "+", "="]) }
+            keySlot { symbolRow(["_", "\\", "|", "~", "<", ">", "$", "£", "¥", "·"]) }
+            keySlot {
+                HStack(spacing: 6) {
+                    specialKey("123", width: 46, fontSize: 15) { plane = .numeric }
+                    Spacer(minLength: 10)
+                    symbolRow(["。", "、", "?", "!", "ー", "'"])
+                    Spacer(minLength: 10)
+                    specialKey("⌫", width: 46) { model.tapBackspace() }
+                }
+            }
+            keySlot { backToLettersRow }
+        }
+    }
+
+    /// 이모지 그리드가 4개 키 슬롯 영역(216pt)을 대체 — 스크롤 그리드 + 자체 하단 행으로 구성
+    private var emojiPlane: some View {
+        VStack(spacing: 0) {
+            ScrollView(showsIndicators: false) {
+                LazyVGrid(columns: emojiColumns, spacing: 6) {
+                    ForEach(emojiList, id: \.self) { emoji in
+                        Button { model.tapSymbol(emoji) } label: {
+                            Text(emoji)
+                                .font(.system(size: 30))
+                                .frame(maxWidth: .infinity, minHeight: 40)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.top, 4)
+            }
+            .frame(maxHeight: .infinity)
+            keySlot {
+                HStack(spacing: 6) {
+                    specialKey("한글", width: 46, fontSize: 14) { plane = .letters }
+                    specialKey("⌫", width: 46) { model.tapBackspace() }
+                    spaceKey
+                    specialKey("⏎", width: 88) { model.tapEnter() }
+                }
+            }
+        }
+        .frame(height: 4 * slotHeight)
+    }
+
+    /// 숫자·기호 판 공용 하단 행: [한글(복귀)][😊][스페이스][⏎]
+    private var backToLettersRow: some View {
+        HStack(spacing: 6) {
+            specialKey("한글", width: 46, fontSize: 14) { plane = .letters }
+            specialKey("😊", width: 46) { plane = .emoji }
+            spaceKey
+            specialKey("⏎", width: 88) { model.tapEnter() }
+        }
     }
 
     /// 네이티브 키보드의 행 슬롯: 54pt 슬롯 안에 43pt 키를 수직 중앙 배치 (4×54 = 216 + 바 44 = 260)
     private func keySlot<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content().frame(height: keyHeight).frame(maxWidth: .infinity).frame(height: 54)
+        content().frame(height: keyHeight).frame(maxWidth: .infinity).frame(height: slotHeight)
     }
 
     /// 조합 중인 가나는 입력창에 인라인(마크드 텍스트)으로 표시되므로, 여기서는 후보 선택 중에만
@@ -154,11 +271,30 @@ struct KeyboardView: View {
         }
     }
 
-    private func specialKey(_ label: String, width: CGFloat = 46,
+    /// 숫자·기호 판의 문자 키 — 조합과 무관하므로 전부 model.tapSymbol로 전송 (ー는 tapSymbol 내부에서
+    /// 조합에 들어가도록 특별 처리되어 있어 그대로 재사용됨)
+    private func symbolRow(_ symbols: [String]) -> some View {
+        HStack(spacing: 6) {
+            ForEach(symbols, id: \.self) { symbol in
+                Button { model.tapSymbol(symbol) } label: {
+                    Text(symbol)
+                        .font(.system(size: 23))
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, minHeight: keyHeight)
+                        .background(keyFillColor)
+                        .cornerRadius(keyCornerRadius)
+                        .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func specialKey(_ label: String, width: CGFloat = 46, fontSize: CGFloat = 18,
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
-                .font(.system(size: 18))
+                .font(.system(size: fontSize))
                 .foregroundColor(.primary)
                 .frame(width: width, height: keyHeight)
                 .background(specialKeyFillColor)
