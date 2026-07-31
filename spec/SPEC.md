@@ -222,5 +222,5 @@
 2. **Swift 생성기 재실행**: 저장소 루트에서 `swift spec/generators/gen-swift.swift`를 실행해 `core-swift/Sources/HanguljiCore/KanaTable.generated.swift`를 mapping.tsv로부터 다시 생성한다. 이 파일은 수기 수정 금지이며 항상 생성기 산출물이어야 한다.
 3. **fixture-export 재실행**: `core-swift` 디렉터리에서 `swift run fixture-export`를 실행한다. 이 도구는 사람이 정한 골든 케이스(한글 문자열 기준)를 Swift 레퍼런스 구현으로 직접 검증(불일치 시 즉시 실패)한 뒤 그 결과를 `spec/fixtures/kana.json` / `composition.json`으로 (재)기록한다. 즉 픽스처 파일은 항상 "검증된 상태"로만 갱신된다.
 4. **Swift 테스트 실행**: `core-swift`에서 `swift test`를 실행해 전체 스위트(단위 테스트 + `FixtureTests.swift` conformance 러너 포함)가 통과하는지 확인한다. 이 단계가 게이트다 — Swift가 초록이 아니면 다음 단계로 넘어가지 않는다.
-5. **각 포트 갱신**: Kotlin(Android) 쪽 테이블 상수를 `spec/mapping.tsv`에 맞춰 재생성(해당 언어용 생성기가 있다면 그것을 실행, 없다면 수동으로 동등하게 갱신)하고, Windows 브리지의 대응 테이블/로직도 동일하게 갱신한다. 이어서 각 포트 자체의 §6 conformance 러너(같은 `spec/fixtures/*.json`을 읽는 자기 언어 테스트)를 돌려 통과를 확인한다.
+5. **각 포트 갱신**: 모든 포트는 `spec/mapping.tsv`로부터 테이블 상수를 생성기로 재생성해야 한다 — 해당 언어용 생성기가 있다면 그것을 실행하고, 없다면 이번 기회에 작성한다. 수기 수정(수동으로 동등하게 갱신)은 금지한다(설계 §4 참고). Kotlin(Android) 쪽 테이블 상수, Windows 브리지의 대응 테이블/로직 모두 동일하게 생성기 산출물이어야 한다. 이어서 각 포트 자체의 §6 conformance 러너(같은 `spec/fixtures/*.json`을 읽는 자기 언어 테스트)를 돌려 통과를 확인한다.
 6. 모든 포트의 conformance 러너가 갱신된 픽스처로 통과해야 변경이 완료된 것으로 간주한다(CI 게이트).

@@ -26,11 +26,16 @@ let vowelNames: [String: String] = [
 
 var bodyLines: [String] = []
 var finalLines: [String] = []
-for rawLine in tsv.split(separator: "\n") {
+var seenKeys: Set<String> = []
+for (lineIndex, rawLine) in tsv.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
     let line = String(rawLine)
     if line.hasPrefix("#") || line.isEmpty { continue }
     let cols = line.components(separatedBy: "\t")
     guard cols.count == 4 else { fatalError("잘못된 TSV 행: \(line)") }
+    let key = "\(cols[0])\t\(cols[1])\t\(cols[2])"
+    guard seenKeys.insert(key).inserted else {
+        fatalError("중복 매핑 행 (줄 \(lineIndex + 1)): \(line)")
+    }
     switch cols[0] {
     case "body":
         guard let ci = consonantNames[cols[1]], let vi = vowelNames[cols[2]] else {

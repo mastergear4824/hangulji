@@ -96,6 +96,13 @@ let kanaCases: [KanaCase] = [
     .init(name: "extended", hangul: "티디투두화휘훼훠위웨", kana: "てぃでぃとぅどぅふぁふぃふぇふぉうぃうぇ", fullyMapped: true),
     .init(name: "za-vs-ja", hangul: "자쟈", kana: "ざじゃ", fullyMapped: true),
     .init(name: "prolonged", hangul: "라-멘", kana: "らーめん", fullyMapped: true),
+    // 커버리지 보강 (전 셀 도달 — 최종 리뷰 I-1)
+    .init(name: "row-gg-full", hangul: "까끼꾸께꼬꺄뀨꾜끄", kana: "かきくけこきゃきゅきょく", fullyMapped: true),
+    .init(name: "row-bb-full", hangul: "빠삐뿌뻬뽀뺘쀼뾰쁘", kana: "ぱぴぷぺぽぴゃぴゅぴょぷ", fullyMapped: true),
+    .init(name: "eu-column", hangul: "그느드르므브프트", kana: "ぐぬどぅるむぶぷとぅ", fullyMapped: true),
+    .init(name: "row-ss-rest", hangul: "씨쎄쏘", kana: "しせそ", fullyMapped: true),
+    .init(name: "row-dd-rest", hangul: "떼또", kana: "てと", fullyMapped: true),
+    .init(name: "final-d-b-sokuon", hangul: "받밥", kana: "ばっばっ", fullyMapped: true),
     // 매핑 불가
     .init(name: "unmappable", hangul: "별", kana: "별", fullyMapped: false),
 ]

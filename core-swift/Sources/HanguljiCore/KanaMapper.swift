@@ -30,11 +30,6 @@ public enum KanaMapper {
         return table
     }()
 
-    /// spec 픽스처·생성기 검증용 공개 조회 (동작은 map()과 동일 데이터)
-    static func bodyKana(initial: Consonant, vowel: Vowel) -> String? {
-        bodyTable[BodyKey(initial: initial, vowel: vowel)]
-    }
-
     public static func map(_ syllables: [Syllable]) -> [MappedSyllable] {
         syllables.map { syllable in
             guard let initial = syllable.initial, let vowel = syllable.vowel,

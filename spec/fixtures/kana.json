@@ -37,5 +37,11 @@
   {"name": "extended", "keys": "xlelxnenghkgnlgnpgnjdnldnp", "kana": "てぃでぃとぅどぅふぁふぃふぇふぉうぃうぇ", "fullyMapped": true},
   {"name": "za-vs-ja", "keys": "wkwi", "kana": "ざじゃ", "fullyMapped": true},
   {"name": "prolonged", "keys": "fk-aps", "kana": "らーめん", "fullyMapped": true},
+  {"name": "row-gg-full", "keys": "RkRlRnRpRhRiRbRyRm", "kana": "かきくけこきゃきゅきょく", "fullyMapped": true},
+  {"name": "row-bb-full", "keys": "QkQlQnQpQhQiQbQyQm", "kana": "ぱぴぷぺぽぴゃぴゅぴょぷ", "fullyMapped": true},
+  {"name": "eu-column", "keys": "rmsmemfmamqmvmxm", "kana": "ぐぬどぅるむぶぷとぅ", "fullyMapped": true},
+  {"name": "row-ss-rest", "keys": "TlTpTh", "kana": "しせそ", "fullyMapped": true},
+  {"name": "row-dd-rest", "keys": "EpEh", "kana": "てと", "fullyMapped": true},
+  {"name": "final-d-b-sokuon", "keys": "qkeqkq", "kana": "ばっばっ", "fullyMapped": true},
   {"name": "unmappable", "keys": "quf", "kana": "별", "fullyMapped": false}
 ]
