@@ -13,6 +13,8 @@ struct KeyboardView: View {
     let needsInputModeSwitchKey: Bool
 
     @State private var plane: Plane = .letters
+    /// 롱프레스로 팝업 중인 row1 변형키의 latin(기본, 비시프트) 식별자 — 동시에 하나만 존재.
+    @State private var calloutKey: String? = nil
 
     private let row1 = [("ㅂ", "q", "ㅃ", "Q"), ("ㅈ", "w", "ㅉ", "W"), ("ㄷ", "e", "ㄸ", "E"),
                         ("ㄱ", "r", "ㄲ", "R"), ("ㅅ", "t", "ㅆ", "T"), ("ㅛ", "y", "ㅛ", "y"),
@@ -99,7 +101,7 @@ struct KeyboardView: View {
 
     private var lettersPlane: some View {
         Group {
-            keySlot { keyRow(row1.map { model.isShifted ? ($0.2, $0.3) : ($0.0, $0.1) }) }
+            keySlot { row1Row }.zIndex(10)   // 팝업이 아래 행 위로 그려지도록
             keySlot { keyRow(row2).padding(.horizontal, 20) }
             keySlot {
                 HStack(spacing: 6) {
@@ -123,6 +125,42 @@ struct KeyboardView: View {
                 }
             }
         }
+    }
+
+    /// row1(ㅂㅈㄷㄱㅅㅛㅕㅑㅐㅔ) 전용 렌더 — 쌍자음·복모음 변형이 있는 7개 키(ㅂㅈㄷㄱㅅㅐㅔ)만
+    /// 롱프레스 팝업(VariantKeyButton)으로 그리고, 나머지 3개(ㅛㅕㅑ)와 시프트 중엔 기존 방식 그대로.
+    /// 시프트가 이미 켜져 있으면 표시되는 글자 자체가 변형이라 더 보여줄 변형이 없으므로 롱프레스 불필요.
+    private var row1Row: some View {
+        HStack(spacing: 6) {
+            ForEach(row1, id: \.1) { jamo, latin, shiftedJamo, shiftedLatin in
+                if model.isShifted {
+                    keyButton(shiftedJamo) { model.tapKey(Character(shiftedLatin)) }
+                } else if shiftedLatin != latin {
+                    VariantKeyButton(jamo: jamo, latin: latin,
+                                     variantJamo: shiftedJamo, variantLatin: shiftedLatin,
+                                     keyHeight: keyHeight, keyCornerRadius: keyCornerRadius,
+                                     keyFillColor: keyFillColor, calloutKey: $calloutKey) { ch in
+                        model.tapKey(ch)
+                    }
+                } else {
+                    keyButton(jamo) { model.tapKey(Character(latin)) }
+                }
+            }
+        }
+    }
+
+    /// row1/row2/row3가 공유하는 평범한 키 라벨 스타일 — VariantKeyButton과 동일한 룩을 낸다.
+    private func keyButton(_ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 23))
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, minHeight: keyHeight)
+                .background(keyFillColor)
+                .cornerRadius(keyCornerRadius)
+                .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+        }
+        .buttonStyle(.plain)
     }
 
     private var numericPlane: some View {
@@ -355,5 +393,69 @@ struct KeyboardView: View {
                 .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// 롱프레스(≥0.35s) 시 위쪽에 쌍자음/복모음 변형 팝업을 보여주는 row1 전용 키.
+/// 짧게 누르고 떼면 기본(latin) 입력, 팝업이 뜬 채로 떼면 변형(variantLatin) 입력 — 네이티브 한글 키보드와 동일한 상호작용.
+private struct VariantKeyButton: View {
+    let jamo: String
+    let latin: String
+    let variantJamo: String
+    let variantLatin: String
+    let keyHeight: CGFloat
+    let keyCornerRadius: CGFloat
+    let keyFillColor: Color
+    @Binding var calloutKey: String?
+    let onTap: (Character) -> Void
+
+    @State private var pressToken: UUID?
+    @State private var isPressed = false
+
+    private static let holdThreshold: TimeInterval = 0.35
+    private var isShowingCallout: Bool { calloutKey == latin }
+
+    var body: some View {
+        Text(jamo)
+            .font(.system(size: 23))
+            .foregroundColor(.primary)
+            .frame(maxWidth: .infinity, minHeight: keyHeight)
+            .background(keyFillColor)
+            .overlay(isPressed ? Color.black.opacity(0.12) : Color.clear)
+            .cornerRadius(keyCornerRadius)
+            .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+            .overlay(alignment: .top) {
+                if isShowingCallout {
+                    Text(variantJamo)
+                        .font(.system(size: 26))
+                        .foregroundColor(.primary)
+                        .frame(width: 52, height: 54)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(keyFillColor))
+                        .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+                        .offset(y: -58)
+                        .allowsHitTesting(false)
+                }
+            }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        isPressed = true
+                        guard pressToken == nil else { return }
+                        let token = UUID()
+                        pressToken = token
+                        DispatchQueue.main.asyncAfter(deadline: .now() + Self.holdThreshold) {
+                            // 그 사이 손을 뗐거나(다른 프레스가 시작됐으면) 무시 — 낡은 타이머 방지.
+                            guard pressToken == token else { return }
+                            calloutKey = latin
+                        }
+                    }
+                    .onEnded { _ in
+                        onTap(Character(isShowingCallout ? variantLatin : latin))
+                        pressToken = nil
+                        calloutKey = nil
+                        isPressed = false
+                    }
+            )
     }
 }
