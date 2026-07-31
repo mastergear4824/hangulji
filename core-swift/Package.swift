@@ -25,6 +25,11 @@ let package = Package(
             ],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
+        .executableTarget(
+            name: "fixture-export",
+            dependencies: ["HanguljiCore"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
         .testTarget(
             name: "HanguljiCoreTests",
             dependencies: ["HanguljiCore"],

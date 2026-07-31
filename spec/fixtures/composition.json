@@ -1,0 +1,10 @@
+[
+  {"name": "reanalysis-kani", "keys": "rksl", "syllables": ["가", "니"]},
+  {"name": "explicit-ng-kan-i", "keys": "rksdl", "syllables": ["간", "이"]},
+  {"name": "compound-wo", "keys": "dnj", "syllables": ["워"]},
+  {"name": "compound-hwa", "keys": "ghk", "syllables": ["화"]},
+  {"name": "double-vowel-split", "keys": "zkk", "syllables": ["카", "ㅏ"]},
+  {"name": "final-then-consonant", "keys": "tktvh", "syllables": ["삿", "포"]},
+  {"name": "dd-cannot-be-final", "keys": "zkEk", "syllables": ["카", "따"]},
+  {"name": "lone-consonant", "keys": "z", "syllables": ["ㅋ"]}
+]
