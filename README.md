@@ -110,20 +110,25 @@ cd hangulji
 ## 개발
 
 ```
-Sources/HanguljiCore/        자모 조합 + 가나 매핑 (순수 Swift, 유닛테스트 대상)
-Sources/HanguljiConversion/  한자 변환 엔진 어댑터
-Sources/Hangulji/            IMKit 셸 + 후보창
-scripts/                     빌드·설치 스크립트
+spec/                           매핑 사양 (mapping.tsv, fixtures/, SPEC.md, generators/)
+core-swift/                     공용 로직 + 엔진 어댑터 + 테스트 (순수 Swift)
+macos/                          IMKit 셸 + 후보창 + 스크립트
+ios/ android/ windows/          예정
 ```
 
 ```bash
-swift test                 # 매핑/조합 로직 전체 테스트 (53개)
-./scripts/install-dev.sh   # 빌드 + ~/Library/Input Methods 설치 + 프로세스 재시작
+swift test --package-path core-swift        # 매핑/조합 로직 전체 테스트 (55개)
+./macos/scripts/install-dev.sh              # 빌드 + ~/Library/Input Methods 설치 + 프로세스 재시작
 ```
 
-- 매핑 규칙은 전부 `Tests/HanguljiCoreTests/`의 골든 테스트로 고정되어 있습니다. 규칙을 바꾸면 테스트부터 고치세요.
-- **IME 프로세스에 디버거를 붙이지 마세요** — 데스크톱 전체 키보드가 얼어붙습니다. 로직은 `swift test`로, 셸은 `NSLog` + Console.app으로 확인합니다.
-- Xcode 프로젝트 없이 SwiftPM + 번들 조립 스크립트로 빌드합니다. `.build/release`가 심링크라 리소스 복사에 `find -L`이 필요한 것 같은 함정은 `scripts/build-app.sh` 주석 참고.
+- 매핑 변경은 `spec/`에서 시작하고, 모든 플랫폼 포트는 같은 픽스처를 통과해야 합니다.
+- 매핑 규칙은 전부 `core-swift/Tests/`의 골든 테스트로 고정되어 있습니다. 규칙을 바꾸면 테스트부터 고치세요.
+- **IME 프로세스에 디버거를 붙이지 마세요** — 데스크톱 전체 키보드가 얼어붙습니다. 로직은 `swift test --package-path core-swift`로, 셸은 `NSLog` + Console.app으로 확인합니다.
+- Xcode 프로젝트 없이 SwiftPM + 번들 조립 스크립트로 빌드합니다.
+
+## 로드맵
+
+iOS·Android는 macOS와 같은 변환 엔진으로 지원 예정이고, Windows는 Google 일본어 입력 커스텀 테이블(1단계)과 키 변환 브리지(2단계)로 지원할 계획입니다. 상세한 설계는 [멀티플랫폼 설계 문서](docs/superpowers/specs/2026-07-31-hangulji-multiplatform-design.md)를 참고하세요.
 
 ## 현재 제한
 
