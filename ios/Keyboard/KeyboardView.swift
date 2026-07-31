@@ -132,14 +132,16 @@ struct KeyboardView: View {
     /// 시프트가 이미 켜져 있으면 표시되는 글자 자체가 변형이라 더 보여줄 변형이 없으므로 롱프레스 불필요.
     private var row1Row: some View {
         HStack(spacing: 6) {
-            ForEach(row1, id: \.1) { jamo, latin, shiftedJamo, shiftedLatin in
+            ForEach(Array(row1.enumerated()), id: \.offset) { index, tuple in
+                let (jamo, latin, shiftedJamo, shiftedLatin) = tuple
                 if model.isShifted {
                     keyButton(shiftedJamo) { model.tapKey(Character(shiftedLatin)) }
                 } else if shiftedLatin != latin {
                     VariantKeyButton(jamo: jamo, latin: latin,
                                      variantJamo: shiftedJamo, variantLatin: shiftedLatin,
                                      keyHeight: keyHeight, keyCornerRadius: keyCornerRadius,
-                                     keyFillColor: keyFillColor, calloutKey: $calloutKey) { ch in
+                                     keyFillColor: keyFillColor, isFirstInRow: index == 0,
+                                     calloutKey: $calloutKey) { ch in
                         model.tapKey(ch)
                     }
                 } else {
@@ -396,8 +398,11 @@ struct KeyboardView: View {
     }
 }
 
-/// 롱프레스(≥0.35s) 시 위쪽에 쌍자음/복모음 변형 팝업을 보여주는 row1 전용 키.
-/// 짧게 누르고 떼면 기본(latin) 입력, 팝업이 뜬 채로 떼면 변형(variantLatin) 입력 — 네이티브 한글 키보드와 동일한 상호작용.
+/// 롱프레스(≥0.35s) 시 위쪽에 기본·변형 두 칸짜리 스와이프 선택 팝업을 보여주는 row1 전용 키
+/// (네이티브 한글 키보드의 쌍자음/복모음 롱프레스 팝업과 동일한 상호작용):
+/// 짧게 누르고 떼면 기본(latin) 입력. 길게 눌러 팝업이 뜨면 처음엔 기본 칸이 선택된 채 시작하고,
+/// 오른쪽으로 반 칸 이상 드래그하면 변형 칸으로, 다시 왼쪽으로 돌아오면 기본 칸으로 선택이 바뀌며,
+/// 뗀 시점의 선택 칸이 입력된다.
 private struct VariantKeyButton: View {
     let jamo: String
     let latin: String
@@ -406,13 +411,17 @@ private struct VariantKeyButton: View {
     let keyHeight: CGFloat
     let keyCornerRadius: CGFloat
     let keyFillColor: Color
+    /// 첫 키(ㅂ)는 팝업을 중앙 정렬하면 왼쪽으로 넘쳐 화면 밖으로 나가므로 왼쪽 정렬로 고정.
+    let isFirstInRow: Bool
     @Binding var calloutKey: String?
     let onTap: (Character) -> Void
 
     @State private var pressToken: UUID?
     @State private var isPressed = false
+    @State private var selectedVariant = false
 
     private static let holdThreshold: TimeInterval = 0.35
+    private static let dragThreshold: CGFloat = 22
     private var isShowingCallout: Bool { calloutKey == latin }
 
     var body: some View {
@@ -424,14 +433,9 @@ private struct VariantKeyButton: View {
             .overlay(isPressed ? Color.black.opacity(0.12) : Color.clear)
             .cornerRadius(keyCornerRadius)
             .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
-            .overlay(alignment: .top) {
+            .overlay(alignment: isFirstInRow ? .topLeading : .top) {
                 if isShowingCallout {
-                    Text(variantJamo)
-                        .font(.system(size: 26))
-                        .foregroundColor(.primary)
-                        .frame(width: 52, height: 54)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(keyFillColor))
-                        .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+                    calloutPanel
                         .offset(y: -58)
                         .allowsHitTesting(false)
                 }
@@ -439,23 +443,55 @@ private struct VariantKeyButton: View {
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
+                    .onChanged { value in
                         isPressed = true
+                        if isShowingCallout {
+                            selectedVariant = value.translation.width > Self.dragThreshold
+                        }
                         guard pressToken == nil else { return }
                         let token = UUID()
                         pressToken = token
                         DispatchQueue.main.asyncAfter(deadline: .now() + Self.holdThreshold) {
                             // 그 사이 손을 뗐거나(다른 프레스가 시작됐으면) 무시 — 낡은 타이머 방지.
                             guard pressToken == token else { return }
+                            selectedVariant = false   // 네이티브처럼 팝업 등장 시 기본 칸이 먼저 선택됨
                             calloutKey = latin
                         }
                     }
                     .onEnded { _ in
-                        onTap(Character(isShowingCallout ? variantLatin : latin))
+                        if isShowingCallout {
+                            onTap(Character(selectedVariant ? variantLatin : latin))
+                        } else {
+                            onTap(Character(latin))
+                        }
                         pressToken = nil
                         calloutKey = nil
                         isPressed = false
+                        selectedVariant = false
                     }
             )
+    }
+
+    /// 기본·변형 두 칸(44×44, 간격 4)을 담은 흰 패널 — 선택된 칸만 파란 배경 + 흰 글자.
+    private var calloutPanel: some View {
+        HStack(spacing: 4) {
+            variantCell(jamo, selected: !selectedVariant)
+            variantCell(variantJamo, selected: selectedVariant)
+        }
+        .padding(5)
+        .background(RoundedRectangle(cornerRadius: 10).fill(keyFillColor))
+        .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+    }
+
+    private func variantCell(_ text: String, selected: Bool) -> some View {
+        Text(text)
+            .font(.system(size: 24))
+            .foregroundColor(selected ? .white : .primary)
+            .frame(width: 44, height: 44)
+            .background {
+                if selected {
+                    RoundedRectangle(cornerRadius: 8).fill(Color(UIColor.systemBlue))
+                }
+            }
     }
 }
