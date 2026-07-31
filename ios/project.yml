@@ -54,7 +54,22 @@ targets:
         product: HanguljiCore
       - package: hangulji-core
         product: HanguljiConversion
+  KeyboardModelTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [KeyboardModelTests, Keyboard]
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        CODE_SIGNING_ALLOWED: "NO"
+    dependencies:
+      - package: hangulji-core
+        product: HanguljiCore
+      - package: hangulji-core
+        product: HanguljiConversion
 schemes:
   HanguljiApp:
     build:
       targets: { HanguljiApp: all }
+    test:
+      targets: [KeyboardModelTests]
