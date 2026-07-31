@@ -1,0 +1,60 @@
+name: Hangulji
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+packages:
+  hangulji-core:
+    path: ../core-swift
+targets:
+  HanguljiApp:
+    type: application
+    platform: iOS
+    sources: [App]
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: 한글지
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mastergear.hangulji-ios
+        SWIFT_VERSION: "5.0"
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_ALLOWED: "NO"
+    dependencies:
+      - target: HanguljiKeyboard
+        embed: true
+  HanguljiKeyboard:
+    type: app-extension
+    platform: iOS
+    sources: [Keyboard]
+    info:
+      path: Keyboard/Info.plist
+      properties:
+        CFBundleDisplayName: 한글지
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
+          NSExtensionAttributes:
+            PrimaryLanguage: ja-JP
+            RequestsOpenAccess: false
+            IsASCIICapable: false
+            PrefersRightToLeft: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mastergear.hangulji-ios.keyboard
+        SWIFT_VERSION: "5.0"
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_ALLOWED: "NO"
+        APPLICATION_EXTENSION_API_ONLY: "YES"
+    dependencies:
+      - package: hangulji-core
+        product: HanguljiCore
+      - package: hangulji-core
+        product: HanguljiConversion
+schemes:
+  HanguljiApp:
+    build:
+      targets: { HanguljiApp: all }
