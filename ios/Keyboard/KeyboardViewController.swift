@@ -8,9 +8,11 @@ final class KeyboardViewController: UIInputViewController, TextOutput {
     override func viewDidLoad() {
         super.viewDidLoad()
         model.output = self
+        view.backgroundColor = .clear   // 시스템 키보드 배경(블러)이 그대로 비치도록
         let hostController = UIHostingController(
             rootView: KeyboardView(model: model, controller: self))
         host = hostController
+        hostController.view.backgroundColor = .clear
         addChild(hostController)
         view.addSubview(hostController.view)
         hostController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -19,7 +21,7 @@ final class KeyboardViewController: UIInputViewController, TextOutput {
             hostController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             hostController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            view.heightAnchor.constraint(equalToConstant: 300),
+            view.heightAnchor.constraint(equalToConstant: 260),
         ])
         hostController.didMove(toParent: self)
     }
@@ -30,6 +32,17 @@ final class KeyboardViewController: UIInputViewController, TextOutput {
     }
 
     // MARK: TextOutput
+    func setMarkedText(_ s: String) {
+        textDocumentProxy.setMarkedText(s, selectedRange: NSRange(location: (s as NSString).length, length: 0))
+    }
+    func commitText(_ s: String) {
+        textDocumentProxy.setMarkedText(s, selectedRange: NSRange(location: (s as NSString).length, length: 0))
+        textDocumentProxy.unmarkText()
+    }
+    func clearMarkedText() {
+        textDocumentProxy.setMarkedText("", selectedRange: NSRange(location: 0, length: 0))
+        textDocumentProxy.unmarkText()
+    }
     func insertText(_ s: String) { textDocumentProxy.insertText(s) }
     func deleteBackward() { textDocumentProxy.deleteBackward() }
 }

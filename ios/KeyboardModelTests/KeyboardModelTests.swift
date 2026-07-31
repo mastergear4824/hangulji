@@ -2,8 +2,15 @@ import XCTest
 // Keyboard/ 소스가 이 테스트 타깃에 직접 컴파일되므로 별도 import 불필요
 
 final class FakeOutput: TextOutput {
+    var marked: [String] = []
+    var committed: [String] = []
     var inserted: [String] = []
+    var clearedCount = 0
     var deletions = 0
+
+    func setMarkedText(_ s: String) { marked.append(s) }
+    func commitText(_ s: String) { committed.append(s) }
+    func clearMarkedText() { clearedCount += 1 }
     func insertText(_ s: String) { inserted.append(s) }
     func deleteBackward() { deletions += 1 }
 }
@@ -17,10 +24,11 @@ final class KeyboardModelTests: XCTestCase {
     }
 
     func testTypingShowsKanaPreview() {
-        let (model, _) = makeModel()
+        let (model, out) = makeModel()
         for ch in "xhdnzydn" { model.tapKey(ch) }   // 토우쿄우
         XCTAssertEqual(model.preview, "とうきょう")
         XCTAssertTrue(model.candidates.isEmpty)
+        XCTAssertEqual(out.marked.last, "とうきょう")   // 인라인 마크드 텍스트로도 반영
     }
 
     func testShiftIsOneShot() {
@@ -33,16 +41,18 @@ final class KeyboardModelTests: XCTestCase {
     }
 
     func testSpaceConverts() {
-        let (model, _) = makeModel()
+        let (model, out) = makeModel()
         for ch in "xhdnzydn" { model.tapKey(ch) }
         model.tapSpace()
         XCTAssertFalse(model.candidates.isEmpty)
         XCTAssertTrue(model.candidates.contains("東京"), "\(model.candidates)")
         XCTAssertEqual(model.selectedIndex, 0)
         XCTAssertEqual(model.preview, model.candidates[0])
+        XCTAssertEqual(out.marked.last, model.candidates[0])
         model.tapSpace()   // 다음 후보
         XCTAssertEqual(model.selectedIndex, 1)
         XCTAssertEqual(model.preview, model.candidates[1])
+        XCTAssertEqual(out.marked.last, model.candidates[1])
     }
 
     func testCandidateTapCommits() {
@@ -51,7 +61,8 @@ final class KeyboardModelTests: XCTestCase {
         model.tapSpace()
         guard let tokyoIndex = model.candidates.firstIndex(of: "東京") else { return XCTFail() }
         model.tapCandidate(tokyoIndex)
-        XCTAssertEqual(out.inserted, ["東京"])
+        XCTAssertEqual(out.committed, ["東京"])
+        XCTAssertTrue(out.inserted.isEmpty)
         XCTAssertEqual(model.preview, "")
         XCTAssertTrue(model.candidates.isEmpty)
     }
@@ -60,7 +71,8 @@ final class KeyboardModelTests: XCTestCase {
         let (model, out) = makeModel()
         for ch in "xhdnzydn" { model.tapKey(ch) }
         model.tapEnter()
-        XCTAssertEqual(out.inserted, ["とうきょう"])
+        XCTAssertEqual(out.committed, ["とうきょう"])
+        XCTAssertTrue(out.inserted.isEmpty)
         XCTAssertEqual(model.preview, "")
     }
 
@@ -76,8 +88,9 @@ final class KeyboardModelTests: XCTestCase {
         model.tapSpace()
         let first = model.candidates[0]
         model.tapKey("z")   // 새 타이핑
-        XCTAssertEqual(out.inserted, [first])
+        XCTAssertEqual(out.committed, [first])
         XCTAssertEqual(model.preview, "ㅋ")
+        XCTAssertEqual(out.marked.last, "ㅋ")
         XCTAssertTrue(model.candidates.isEmpty)
     }
 
@@ -86,19 +99,22 @@ final class KeyboardModelTests: XCTestCase {
         model.tapKey("z"); model.tapKey("k")   // 카
         model.tapBackspace()                   // ㅏ 제거 → ㅋ
         XCTAssertEqual(model.preview, "ㅋ")
-        model.tapBackspace()                   // 조합 비움
+        model.tapBackspace()                   // 조합 비움 → 마크드 텍스트 제거(프록시 위임 아님)
         XCTAssertEqual(model.preview, "")
+        XCTAssertGreaterThanOrEqual(out.clearedCount, 1)
+        XCTAssertEqual(out.deletions, 0)
         model.tapBackspace()                   // 프록시로 위임
         XCTAssertEqual(out.deletions, 1)
     }
 
     func testBackspaceCancelsSelection() {
-        let (model, _) = makeModel()
+        let (model, out) = makeModel()
         for ch in "xhdnzydn" { model.tapKey(ch) }
         model.tapSpace()
         model.tapBackspace()
         XCTAssertTrue(model.candidates.isEmpty)
         XCTAssertEqual(model.preview, "とうきょう")   // 가나로 복귀
+        XCTAssertEqual(out.marked.last, "とうきょう")   // 마크드 텍스트도 다시 표시
     }
 
     func testSpaceWhenIdleInsertsSpace() {
@@ -111,7 +127,8 @@ final class KeyboardModelTests: XCTestCase {
         let (model, out) = makeModel()
         for ch in "quf" { model.tapKey(ch) }   // 별 (매핑 불가)
         model.tapSpace()                        // 변환 불가 → 그대로 확정
-        XCTAssertEqual(out.inserted, ["별"])
+        XCTAssertEqual(out.committed, ["별"])
+        XCTAssertTrue(out.inserted.isEmpty)
     }
 
     func testSymbols() {
@@ -121,7 +138,9 @@ final class KeyboardModelTests: XCTestCase {
         for ch in "fk" { model.tapKey(ch) }    // 라
         model.tapSymbol("ー")                   // 조합 중 ー는 조합에 들어감
         XCTAssertEqual(model.preview, "らー")
+        XCTAssertEqual(out.marked.last, "らー")
         model.tapSymbol("。")                   // 조합 커밋 후 。
-        XCTAssertEqual(out.inserted, ["。", "らー", "。"])
+        XCTAssertEqual(out.committed, ["らー"])
+        XCTAssertEqual(out.inserted, ["。", "。"])
     }
 }

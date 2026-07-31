@@ -14,40 +14,55 @@ struct KeyboardView: View {
     private let row3 = [("ㅋ", "z"), ("ㅌ", "x"), ("ㅊ", "c"), ("ㅍ", "v"),
                         ("ㅠ", "b"), ("ㅜ", "n"), ("ㅡ", "m")]
 
+    // 시스템 키보드 톤 — 라이트: 흰 키/회색 특수키, 다크: 진회색 키/더 진한 특수키. 액센트(블루) 사용 금지.
+    private var keyFillColor: Color {
+        Color(UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(white: 0.42, alpha: 1)
+                : UIColor.white
+        })
+    }
+
+    private var specialKeyFillColor: Color {
+        Color(UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(white: 0.28, alpha: 1)
+                : UIColor(red: 0.68, green: 0.70, blue: 0.74, alpha: 1)
+        })
+    }
+
+    private var isComposingOrSelecting: Bool {
+        !model.preview.isEmpty || !model.candidates.isEmpty
+    }
+
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 10) {
             candidateBar
             keyRow(row1.map { model.isShifted ? ($0.2, $0.3) : ($0.0, $0.1) })
             keyRow(row2)
-            HStack(spacing: 4) {
-                controlKey(model.isShifted ? "⬆" : "⇧") { model.toggleShift() }
+                .padding(.horizontal, 20)
+            HStack(spacing: 6) {
+                shiftKey
                 keyRow(row3)
-                controlKey("⌫") { model.tapBackspace() }
+                specialKey("⌫", width: 44) { model.tapBackspace() }
             }
-            HStack(spacing: 4) {
-                GlobeButton(controller: controller).frame(width: 44)
-                controlKey("ー", width: 36) { model.tapSymbol("ー") }
-                Button { model.tapSpace() } label: {
-                    Text(model.candidates.isEmpty ? "변환·스페이스" : "다음 후보")
-                        .frame(maxWidth: .infinity, minHeight: 40)
-                        .background(Color(UIColor.systemBackground))
-                        .cornerRadius(6)
-                }
-                controlKey("。", width: 36) { model.tapSymbol("。") }
-                controlKey("⏎", width: 44) { model.tapEnter() }
+            HStack(spacing: 6) {
+                GlobeButton(controller: controller).frame(width: 44, height: 42)
+                specialKey("ー", width: 44) { model.tapSymbol("ー") }
+                spaceKey
+                specialKey("。", width: 44) { model.tapSymbol("。") }
+                specialKey("⏎", width: 64) { model.tapEnter() }
             }
         }
         .padding(6)
-        .background(Color(UIColor.secondarySystemBackground))
+        .background(Color.clear)
     }
 
+    /// 조합 중인 가나는 입력창에 인라인(마크드 텍스트)으로 표시되므로, 여기서는 후보 선택 중에만 내용을 보여준다.
     private var candidateBar: some View {
         Group {
             if model.candidates.isEmpty {
-                Text(model.preview.isEmpty ? " " : model.preview)
-                    .font(.system(size: 20))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 8)
+                Color.clear
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
@@ -55,10 +70,12 @@ struct KeyboardView: View {
                             Button { model.tapCandidate(index) } label: {
                                 Text(candidate)
                                     .font(.system(size: 20))
-                                    .padding(.horizontal, 6)
+                                    .foregroundColor(.primary)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
                                     .background(index == model.selectedIndex
-                                                ? Color.accentColor.opacity(0.25) : Color.clear)
-                                    .cornerRadius(4)
+                                                ? Color(UIColor.systemGray4) : Color.clear)
+                                    .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
                         }
@@ -67,35 +84,65 @@ struct KeyboardView: View {
                 }
             }
         }
-        .frame(height: 44)
-        .background(Color(UIColor.systemBackground))
-        .cornerRadius(6)
+        .frame(height: 40)
+        .background(Color.clear)
+    }
+
+    private var shiftKey: some View {
+        Button { model.toggleShift() } label: {
+            Text(model.isShifted ? "⬆" : "⇧")
+                .font(.system(size: 18))
+                .foregroundColor(.primary)
+                .frame(minWidth: 44, minHeight: 42)
+                .frame(maxWidth: 60)
+                .background(model.isShifted ? keyFillColor : specialKeyFillColor)
+                .cornerRadius(5)
+                .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var spaceKey: some View {
+        Button { model.tapSpace() } label: {
+            Text(isComposingOrSelecting ? "변환" : "스페이스")
+                .font(.system(size: 16))
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, minHeight: 42)
+                .background(keyFillColor)
+                .cornerRadius(5)
+                .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+        }
+        .buttonStyle(.plain)
     }
 
     private func keyRow(_ keys: [(String, String)]) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             ForEach(keys, id: \.1) { label, latin in
                 Button { model.tapKey(Character(latin)) } label: {
                     Text(label)
-                        .font(.system(size: 20))
+                        .font(.system(size: 23))
+                        .foregroundColor(.primary)
                         .frame(maxWidth: .infinity, minHeight: 42)
-                        .background(Color(UIColor.systemBackground))
-                        .cornerRadius(6)
+                        .background(keyFillColor)
+                        .cornerRadius(5)
+                        .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
                 }
                 .buttonStyle(.plain)
             }
         }
     }
 
-    private func controlKey(_ label: String, width: CGFloat? = nil,
+    private func specialKey(_ label: String, width: CGFloat? = nil,
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 18))
+                .foregroundColor(.primary)
                 .frame(minWidth: width ?? 44, minHeight: 42)
                 .frame(maxWidth: width == nil ? 60 : width)
-                .background(Color(UIColor.tertiarySystemBackground))
-                .cornerRadius(6)
+                .background(specialKeyFillColor)
+                .cornerRadius(5)
+                .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
