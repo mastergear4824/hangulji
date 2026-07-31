@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 @main
 struct HanguljiApp: App {
@@ -25,6 +26,12 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("한글지")
+        }
+        // 실측 검증용 — 키보드가 실제로 화면에 뜰 때 시스템이 보고하는 프레임 높이를 콘솔에 남긴다.
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
+            if let frame = (note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
+                NSLog("HanguljiApp KBFrame height=%.1f", frame.height)
+            }
         }
     }
 }

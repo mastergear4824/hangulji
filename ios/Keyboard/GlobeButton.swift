@@ -8,7 +8,8 @@ struct GlobeButton: UIViewRepresentable {
 
     func makeUIView(context: Context) -> UIButton {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "globe"), for: .normal)
+        let configuration = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
+        button.setImage(UIImage(systemName: "globe", withConfiguration: configuration), for: .normal)
         button.tintColor = .label   // 액센트(블루) 금지 — 시스템 키보드 톤에 맞춤
         button.backgroundColor = UIColor { trait in
             trait.userInterfaceStyle == .dark

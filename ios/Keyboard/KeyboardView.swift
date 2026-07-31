@@ -39,10 +39,14 @@ struct KeyboardView: View {
     ]
     private let emojiColumns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 8)
 
-    private let keyHeight: CGFloat = 43
+    // 잠정 네이티브 실측 메트릭(iPhone 17, iOS 26) — 실기기 로그로 추후 보정 예정.
+    // 56(바) + 4×44(키) + 3×11(행 간격) + 9(하단 여백) = 274
+    private let totalHeight: CGFloat = 274
+    private let barHeight: CGFloat = 56
+    private let keyHeight: CGFloat = 44
+    private let rowGap: CGFloat = 11
+    private let bottomMargin: CGFloat = 9
     private let keyCornerRadius: CGFloat = 4.6
-    /// 네이티브 키보드의 행 슬롯 높이 — 4개 슬롯(216pt) + 후보 바(44pt) = 260pt(키보드 창 높이)
-    private let slotHeight: CGFloat = 54
 
     // 시스템 키보드 톤 — 라이트: 흰 키/회색 특수키, 다크: 진회색 키/더 진한 특수키. 액센트(블루) 사용 금지.
     private var keyFillColor: Color {
@@ -67,7 +71,19 @@ struct KeyboardView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            candidateBar            // height 44, unchanged content
+            candidateBar            // height 56
+            rowsBlock
+        }
+        .padding(.horizontal, 3)
+        // 호스팅 컨트롤러의 고유 콘텐츠 크기를 강제 고정 — 이게 없으면 SwiftUI의 계산된
+        // 이상적 크기가 view.heightAnchor 제약과 어긋나 UIKit이 다른 높이로 렌더링할 수 있다.
+        .frame(height: totalHeight, alignment: .top)
+        .background(Color.clear)
+    }
+
+    /// 4개 키 행 블록 + 하단 여백. 모든 판에서 정확히 56 + (4×44 + 3×11) + 9 = 274를 이룬다.
+    private var rowsBlock: some View {
+        VStack(spacing: rowGap) {
             switch plane {
             case .letters: lettersPlane
             case .numeric: numericPlane
@@ -75,15 +91,10 @@ struct KeyboardView: View {
             case .emoji: emojiPlane
             }
         }
-        .padding(.horizontal, 3)
-        // 호스팅 컨트롤러의 고유 콘텐츠 크기를 260으로 강제 고정 — 이게 없으면 SwiftUI의
-        // 계산된 이상적 크기가 view.heightAnchor 제약과 어긋나 UIKit이 더 큰 높이로
-        // 렌더링할 수 있다(바 44 + 4×54 슬롯 = 260, 모든 판에서 동일하게 성립).
-        .frame(height: 260, alignment: .top)
-        .background(Color.clear)
+        .padding(.bottom, bottomMargin)
     }
 
-    // MARK: Planes — 각 판은 정확히 216pt(4×54) 사용, 바 44pt와 합쳐 총 260pt 유지
+    // MARK: Planes
 
     private var lettersPlane: some View {
         Group {
@@ -147,9 +158,10 @@ struct KeyboardView: View {
         }
     }
 
-    /// 이모지 그리드가 4개 키 슬롯 영역(216pt)을 대체 — 스크롤 그리드 + 자체 하단 행으로 구성
+    /// 이모지 그리드가 4개 키 행 블록(209 = 4×44 + 3×11)을 대체 — 스크롤 그리드 + 자체 하단 행.
+    /// 그리드 영역 = 209 − 11(행 간격) − 44(하단 행) = 154.
     private var emojiPlane: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: rowGap) {
             ScrollView(showsIndicators: false) {
                 LazyVGrid(columns: emojiColumns, spacing: 6) {
                     ForEach(emojiList, id: \.self) { emoji in
@@ -174,7 +186,7 @@ struct KeyboardView: View {
                 }
             }
         }
-        .frame(height: 4 * slotHeight)
+        .frame(height: 4 * keyHeight + 3 * rowGap)
     }
 
     /// 숫자·기호 판 공용 하단 행: [한글(복귀)][😊][스페이스][⏎]
@@ -187,17 +199,26 @@ struct KeyboardView: View {
         }
     }
 
-    /// 네이티브 키보드의 행 슬롯: 54pt 슬롯 안에 43pt 키를 수직 중앙 배치 (4×54 = 216 + 바 44 = 260)
+    /// 행 높이를 정확히 keyHeight로 고정 — 행 간 간격은 부모 VStack(spacing: rowGap)이 담당.
     private func keySlot<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content().frame(height: keyHeight).frame(maxWidth: .infinity).frame(height: slotHeight)
+        content().frame(height: keyHeight)
     }
 
     /// 조합 중인 가나는 입력창에 인라인(마크드 텍스트)으로 표시되므로, 여기서는 후보 선택 중에만
-    /// 내용을 보여준다. 네이티브 제안 바 스타일: 배경 박스 없이 구분선으로만 항목을 나눈다.
+    /// 내용을 보여준다. 비어 있을 때는 네이티브처럼 1/3·2/3 지점에 옅은 세로 틱 구분선만 표시.
     private var candidateBar: some View {
         Group {
             if model.candidates.isEmpty {
-                Color.clear
+                GeometryReader { geo in
+                    ZStack {
+                        ForEach([1, 2], id: \.self) { i in
+                            Rectangle()
+                                .fill(Color(UIColor.separator))
+                                .frame(width: 1, height: 26)
+                                .position(x: geo.size.width * CGFloat(i) / 3, y: geo.size.height / 2)
+                        }
+                    }
+                }
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 0) {
@@ -228,14 +249,14 @@ struct KeyboardView: View {
                 }
             }
         }
-        .frame(height: 44)
+        .frame(height: barHeight)
         .background(Color.clear)
     }
 
     private var shiftKey: some View {
         Button { model.toggleShift() } label: {
             Image(systemName: model.isShifted ? "shift.fill" : "shift")
-                .font(.system(size: 18))
+                .font(.system(size: 22, weight: .regular))
                 .foregroundColor(.primary)
                 .frame(width: 46, height: keyHeight)
                 .background(model.isShifted ? keyFillColor : specialKeyFillColor)
@@ -306,7 +327,7 @@ struct KeyboardView: View {
     }
 
     /// 텍스트 라벨 특수키(123·#+=·한글) — 네이티브도 이 셋은 텍스트로 표시.
-    private func specialKey(_ label: String, width: CGFloat = 46, fontSize: CGFloat = 16,
+    private func specialKey(_ label: String, width: CGFloat = 46, fontSize: CGFloat = 17,
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
@@ -326,7 +347,7 @@ struct KeyboardView: View {
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 18))
+                .font(.system(size: 22, weight: .regular))
                 .foregroundColor(.primary)
                 .frame(width: width, height: keyHeight)
                 .background(specialKeyFillColor)
