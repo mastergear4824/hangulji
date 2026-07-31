@@ -1,0 +1,26 @@
+name: core
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  swift:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            core-swift/.build
+            macos/.build
+          key: spm-${{ runner.os }}-${{ hashFiles('core-swift/Package.resolved') }}
+      - name: Core tests (fixtures 포함)
+        run: swift test --package-path core-swift
+      - name: macOS shell release build
+        run: swift build -c release --package-path macos
+      - name: 생성물 최신성 (테이블·픽스처)
+        run: |
+          swift spec/generators/gen-swift.swift
+          swift run --package-path core-swift fixture-export
+          git diff --exit-code
