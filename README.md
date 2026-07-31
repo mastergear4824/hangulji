@@ -22,6 +22,8 @@
 
 ## 설치
 
+### macOS
+
 **요구사항:** macOS 14 이상, Swift 툴체인(Xcode 또는 Command Line Tools)
 
 ```bash
@@ -35,6 +37,25 @@ cd hangulji
 1. **시스템 설정 → 키보드 → 입력 소스 → 편집 → `+` → 일본어 → 한글지** 추가
 2. 목록에 안 보이면 **로그아웃 후 다시 로그인** (새 입력기 등록 시 알려진 macOS 동작)
 3. 입력 소스를 한글지로 전환하고 아무 앱에서나 타이핑
+
+### iOS (시뮬레이터)
+
+**요구사항:** Xcode 15 이상
+
+```bash
+git clone https://github.com/mastergear4824/hangulji.git
+cd hangulji
+./ios/scripts/install-sim.sh
+```
+
+설치 후 iOS 시뮬레이터에서:
+
+1. **설정 → 일반 → 키보드 → 키보드** → `+` → **일본어** 추가
+2. **한글지** 추가 (일본어 아래에 있음)
+3. **설정 → 일반 → 키보드 → 하드웨어 키보드** → **하드웨어 키보드 비활성화** (⌘⇧K)
+4. 앱에서 입력 소스를 한글지로 전환하고 타이핑
+
+> **실기기 사용:** 무료 Apple 개발자 계정으로 7일 테스트 프로비저닝 가능합니다.
 
 ## 사용법
 
@@ -113,7 +134,8 @@ cd hangulji
 spec/                           매핑 사양 (mapping.tsv, fixtures/, SPEC.md, generators/)
 core-swift/                     공용 로직 + 엔진 어댑터 + 테스트 (순수 Swift)
 macos/                          IMKit 셸 + 후보창 + 스크립트
-ios/ android/ windows/          예정
+ios/                            SwiftUI 자판 (App/, Keyboard/, KeyboardModelTests/, project.yml, scripts/)
+android/ windows/               예정
 ```
 
 ```bash
@@ -128,7 +150,11 @@ swift test --package-path core-swift        # 매핑/조합 로직 전체 테스
 
 ## 로드맵
 
-iOS·Android는 macOS와 같은 변환 엔진으로 지원 예정이고, Windows는 Google 일본어 입력 커스텀 테이블(1단계)과 키 변환 브리지(2단계)로 지원할 계획입니다. 상세한 설계는 [멀티플랫폼 설계 문서](docs/superpowers/specs/2026-07-31-hangulji-multiplatform-design.md)를 참고하세요.
+- **iOS:** 완료 (시뮬레이터). 실기기는 무료 Apple 개발자 계정으로 7일 테스트 프로비저닝 가능.
+- **Android:** 같은 변환 엔진으로 지원 예정
+- **Windows:** Google 일본어 입력 커스텀 테이블(1단계)과 키 변환 브리지(2단계)로 지원 계획
+
+상세한 설계는 [멀티플랫폼 설계 문서](docs/superpowers/specs/2026-07-31-hangulji-multiplatform-design.md)를 참고하세요.
 
 ## 현재 제한
 

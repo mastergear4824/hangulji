@@ -26,3 +26,25 @@ jobs:
           swift spec/generators/gen-swift.swift
           swift run --package-path core-swift fixture-export
           git diff --exit-code -- spec core-swift/Sources/HanguljiCore/KanaTable.generated.swift
+
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - uses: actions/cache@v4
+        with:
+          path: ios/build
+          key: ios-${{ runner.os }}-${{ hashFiles('core-swift/Package.resolved') }}
+      - name: Build (simulator)
+        run: |
+          cd ios && xcodegen generate
+          xcodebuild -project Hangulji.xcodeproj -scheme HanguljiApp \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build | tail -5
+      - name: Model tests
+        run: |
+          cd ios && xcodebuild -project Hangulji.xcodeproj -scheme HanguljiApp \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO test | tail -5
