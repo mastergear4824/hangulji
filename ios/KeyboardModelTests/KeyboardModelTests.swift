@@ -131,6 +131,27 @@ final class KeyboardModelTests: XCTestCase {
         XCTAssertTrue(out.inserted.isEmpty)
     }
 
+    func testDiscardCompositionClearsWithoutOutputCalls() {
+        let (model, out) = makeModel()
+        for ch in "xhdnzydn" { model.tapKey(ch) }   // 토우쿄우 — 조합 진행
+        let (markedBefore, committedBefore, insertedBefore, clearedBefore, deletionsBefore) =
+            (out.marked.count, out.committed.count, out.inserted.count, out.clearedCount, out.deletions)
+
+        model.discardComposition()   // 텍스트 필드 전환 시뮬레이션 — 아무것도 확정하지 않음
+
+        XCTAssertEqual(model.preview, "")
+        XCTAssertTrue(model.candidates.isEmpty)
+        XCTAssertEqual(out.marked.count, markedBefore)
+        XCTAssertEqual(out.committed.count, committedBefore)
+        XCTAssertEqual(out.inserted.count, insertedBefore)
+        XCTAssertEqual(out.clearedCount, clearedBefore)
+        XCTAssertEqual(out.deletions, deletionsBefore)
+
+        // 이후 새 조합은 정상적으로 시작되어야 함
+        model.tapKey("z")
+        XCTAssertEqual(model.preview, "ㅋ")
+    }
+
     func testSymbols() {
         let (model, out) = makeModel()
         model.tapSymbol("。")

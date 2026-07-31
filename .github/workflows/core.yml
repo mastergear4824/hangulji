@@ -40,12 +40,14 @@ jobs:
       # 주: 러너의 시뮬레이터 기기명은 로컬(iPhone 17)과 다를 수 있어 iPhone 16으로 고정.
       # 잡 실패 시 `xcrun simctl list devices available` 스텝을 추가해 실제 기기명 확인 후 조정.
       - name: Build (simulator)
+        shell: bash
         run: |
           cd ios && xcodegen generate
           xcodebuild -project Hangulji.xcodeproj -scheme HanguljiApp \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO build | tail -5
       - name: Model tests
+        shell: bash
         run: |
           cd ios && xcodebuild -project Hangulji.xcodeproj -scheme HanguljiApp \
             -destination 'platform=iOS Simulator,name=iPhone 16' \

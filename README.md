@@ -40,7 +40,9 @@ cd hangulji
 
 ### iOS (시뮬레이터)
 
-**요구사항:** Xcode 15 이상
+**요구사항:** Xcode 16 이상, XcodeGen(`brew install xcodegen`)
+
+> 스크립트(`ios/scripts/*.sh`)는 시뮬레이터 기기명이 **iPhone 17**이라고 가정합니다. 기기명이 다르면 스크립트 안의 이름을 실제 기기명으로 수정하세요.
 
 ```bash
 git clone https://github.com/mastergear4824/hangulji.git

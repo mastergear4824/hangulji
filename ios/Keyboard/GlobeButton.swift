@@ -15,7 +15,7 @@ struct GlobeButton: UIViewRepresentable {
                 ? UIColor(white: 0.28, alpha: 1)
                 : UIColor(red: 0.68, green: 0.70, blue: 0.74, alpha: 1)
         }
-        button.layer.cornerRadius = 5
+        button.layer.cornerRadius = 4.6
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOpacity = 0.35
         button.layer.shadowRadius = 0

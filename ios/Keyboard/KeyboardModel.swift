@@ -101,6 +101,15 @@ final class KeyboardModel: ObservableObject {
         if !composer.isEmpty { commitComposition() }
     }
 
+    /// 텍스트 필드 전환 등 외부 요인으로 커서/문서가 바뀐 경우 — 아무것도 확정하지 않고
+    /// 조합·선택 상태만 버린다 (output 호출 없음: 이미 다른 곳으로 옮겨간 마크드 텍스트를 건드리지 않기 위함).
+    func discardComposition() {
+        composer.clear()
+        candidates = []
+        selectedIndex = 0
+        preview = ""
+    }
+
     private func commitComposition() {
         output?.commitText(composer.markedText)
         composer.clear()
