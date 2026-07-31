@@ -39,13 +39,13 @@ struct KeyboardView: View {
     ]
     private let emojiColumns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 8)
 
-    // 잠정 네이티브 실측 메트릭(iPhone 17, iOS 26) — 실기기 로그로 추후 보정 예정.
-    // 56(바) + 4×44(키) + 3×11(행 간격) + 9(하단 여백) = 274
-    private let totalHeight: CGFloat = 274
-    private let barHeight: CGFloat = 56
-    private let keyHeight: CGFloat = 44
-    private let rowGap: CGFloat = 11
-    private let bottomMargin: CGFloat = 9
+    // 실측 확정 메트릭: 앱 로거로 잰 키보드 프레임 — 네이티브 한글 335.0 vs 한글지(274) 366.0
+    // → 뷰 높이는 정확히 243이어야 프레임이 일치한다. 44(바) + 4×42(키) + 3×9(행 간격) + 4(하단) = 243
+    private let totalHeight: CGFloat = 243
+    private let barHeight: CGFloat = 44
+    private let keyHeight: CGFloat = 42
+    private let rowGap: CGFloat = 9
+    private let bottomMargin: CGFloat = 4
     private let keyCornerRadius: CGFloat = 4.6
 
     // 시스템 키보드 톤 — 라이트: 흰 키/회색 특수키, 다크: 진회색 키/더 진한 특수키. 액센트(블루) 사용 금지.

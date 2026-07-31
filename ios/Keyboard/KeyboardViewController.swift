@@ -29,7 +29,7 @@ final class KeyboardViewController: UIInputViewController, TextOutput {
         // 우선순위 999(required 미만) — 시스템이 내부적으로 강제하는 required(1000) 제약과
         // 충돌해 "동시에 만족 불가" 로그와 함께 더 큰 높이로 렌더링되는 것을 방지.
         // 274 = 네이티브 실측 잠정치(바 56 + 키 4×44 + 행간격 3×11 + 하단여백 9).
-        let heightConstraint = view.heightAnchor.constraint(equalToConstant: 274)
+        let heightConstraint = view.heightAnchor.constraint(equalToConstant: 243)
         heightConstraint.priority = UILayoutPriority(999)
         NSLayoutConstraint.activate([
             hostController.view.topAnchor.constraint(equalTo: view.topAnchor),
