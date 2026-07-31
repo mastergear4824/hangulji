@@ -39,13 +39,14 @@ struct KeyboardView: View {
     ]
     private let emojiColumns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 8)
 
-    // 실측 확정 메트릭: 앱 로거로 잰 키보드 프레임 — 네이티브 한글 335.0 vs 한글지(274) 366.0
-    // → 뷰 높이는 정확히 243이어야 프레임이 일치한다. 44(바) + 4×42(키) + 3×9(행 간격) + 4(하단) = 243
+    // 픽셀 실측 확정 메트릭 (시뮬레이터 스크린샷 대조 — 네이티브 한글 키보드와 행 단위 정합):
+    //   프레임 총높이 335 → 뷰 243 (로거 실측) / 행 top 600·651·702·753pt, 키 41.7pt (픽셀 밴드 실측)
+    //   53(스트립) + 4×41(키) + 3×6(행 간격) + 8(하단) = 243
     private let totalHeight: CGFloat = 243
-    private let barHeight: CGFloat = 44
-    private let keyHeight: CGFloat = 42
-    private let rowGap: CGFloat = 9
-    private let bottomMargin: CGFloat = 4
+    private let barHeight: CGFloat = 53
+    private let keyHeight: CGFloat = 41
+    private let rowGap: CGFloat = 6
+    private let bottomMargin: CGFloat = 8
     private let keyCornerRadius: CGFloat = 4.6
 
     // 시스템 키보드 톤 — 라이트: 흰 키/회색 특수키, 다크: 진회색 키/더 진한 특수키. 액센트(블루) 사용 금지.
@@ -71,7 +72,7 @@ struct KeyboardView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            candidateBar            // height 56
+            candidateBar            // height = barHeight
             rowsBlock
         }
         .padding(.horizontal, 3)
@@ -81,7 +82,7 @@ struct KeyboardView: View {
         .background(Color.clear)
     }
 
-    /// 4개 키 행 블록 + 하단 여백. 모든 판에서 정확히 56 + (4×44 + 3×11) + 9 = 274를 이룬다.
+    /// 4개 키 행 블록 + 하단 여백. 모든 판에서 barHeight + 4×keyHeight + 3×rowGap + bottomMargin = totalHeight.
     private var rowsBlock: some View {
         VStack(spacing: rowGap) {
             switch plane {
@@ -116,7 +117,7 @@ struct KeyboardView: View {
                     if needsInputModeSwitchKey {
                         GlobeButton(controller: controller).frame(width: 46, height: keyHeight)
                     }
-                    specialKey(systemName: "face.smiling", width: 46) { plane = .emoji }
+                    specialKey("😀", width: 46, fontSize: 23) { plane = .emoji }
                     spaceKey
                     specialKey(systemName: "return", width: 88) { model.tapEnter() }
                 }
@@ -158,8 +159,7 @@ struct KeyboardView: View {
         }
     }
 
-    /// 이모지 그리드가 4개 키 행 블록(209 = 4×44 + 3×11)을 대체 — 스크롤 그리드 + 자체 하단 행.
-    /// 그리드 영역 = 209 − 11(행 간격) − 44(하단 행) = 154.
+    /// 이모지 그리드가 4개 키 행 블록을 대체 — 스크롤 그리드 + 자체 하단 행 (합계는 rowsBlock과 동일).
     private var emojiPlane: some View {
         VStack(spacing: rowGap) {
             ScrollView(showsIndicators: false) {
@@ -193,7 +193,7 @@ struct KeyboardView: View {
     private var backToLettersRow: some View {
         HStack(spacing: 6) {
             specialKey("한글", width: 46) { plane = .letters }
-            specialKey(systemName: "face.smiling", width: 46) { plane = .emoji }
+            specialKey("😀", width: 46, fontSize: 23) { plane = .emoji }
             spaceKey
             specialKey(systemName: "return", width: 88) { model.tapEnter() }
         }
