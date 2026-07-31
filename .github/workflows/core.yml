@@ -20,7 +20,9 @@ jobs:
       - name: macOS shell release build
         run: swift build -c release --package-path macos
       - name: 생성물 최신성 (테이블·픽스처)
+        # diff 범위를 생성 산출물로 한정 — 러너의 SwiftPM이 Package.resolved를
+        # 재작성해도 오탐하지 않도록 (검사 의도는 '생성물이 소스와 일치하는가'뿐)
         run: |
           swift spec/generators/gen-swift.swift
           swift run --package-path core-swift fixture-export
-          git diff --exit-code
+          git diff --exit-code -- spec core-swift/Sources/HanguljiCore/KanaTable.generated.swift
