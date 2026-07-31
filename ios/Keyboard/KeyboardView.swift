@@ -39,28 +39,36 @@ struct KeyboardView: View {
     }
 
     var body: some View {
-        VStack(spacing: 11) {
-            candidateBar
-            keyRow(row1.map { model.isShifted ? ($0.2, $0.3) : ($0.0, $0.1) })
-            keyRow(row2)
-                .padding(.horizontal, 20)
-            HStack(spacing: 6) {
-                shiftKey
-                Spacer(minLength: 10)
-                keyRow(row3)
-                Spacer(minLength: 10)
-                specialKey("⌫", width: 46) { model.tapBackspace() }
+        VStack(spacing: 0) {
+            candidateBar            // height 44, unchanged content
+            keySlot { keyRow(row1.map { model.isShifted ? ($0.2, $0.3) : ($0.0, $0.1) }) }
+            keySlot { keyRow(row2).padding(.horizontal, 20) }
+            keySlot {
+                HStack(spacing: 6) {
+                    shiftKey
+                    Spacer(minLength: 10)
+                    keyRow(row3)
+                    Spacer(minLength: 10)
+                    specialKey("⌫", width: 46) { model.tapBackspace() }
+                }
             }
-            HStack(spacing: 6) {
-                GlobeButton(controller: controller).frame(width: 46, height: keyHeight)
-                specialKey("ー", width: 46) { model.tapSymbol("ー") }
-                spaceKey
-                specialKey("。", width: 46) { model.tapSymbol("。") }
-                specialKey("⏎", width: 88) { model.tapEnter() }
+            keySlot {
+                HStack(spacing: 6) {
+                    GlobeButton(controller: controller).frame(width: 46, height: keyHeight)
+                    specialKey("ー", width: 44) { model.tapSymbol("ー") }
+                    spaceKey
+                    specialKey("。", width: 44) { model.tapSymbol("。") }
+                    specialKey("⏎", width: 88) { model.tapEnter() }
+                }
             }
         }
-        .padding(6)
+        .padding(.horizontal, 3)
         .background(Color.clear)
+    }
+
+    /// 네이티브 키보드의 행 슬롯: 54pt 슬롯 안에 43pt 키를 수직 중앙 배치 (4×54 = 216 + 바 44 = 260)
+    private func keySlot<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content().frame(height: keyHeight).frame(maxWidth: .infinity).frame(height: 54)
     }
 
     /// 조합 중인 가나는 입력창에 인라인(마크드 텍스트)으로 표시되므로, 여기서는 후보 선택 중에만
