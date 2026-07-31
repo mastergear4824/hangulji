@@ -76,6 +76,10 @@ struct KeyboardView: View {
             }
         }
         .padding(.horizontal, 3)
+        // 호스팅 컨트롤러의 고유 콘텐츠 크기를 260으로 강제 고정 — 이게 없으면 SwiftUI의
+        // 계산된 이상적 크기가 view.heightAnchor 제약과 어긋나 UIKit이 더 큰 높이로
+        // 렌더링할 수 있다(바 44 + 4×54 슬롯 = 260, 모든 판에서 동일하게 성립).
+        .frame(height: 260, alignment: .top)
         .background(Color.clear)
     }
 
@@ -91,7 +95,7 @@ struct KeyboardView: View {
                     Spacer(minLength: 10)
                     keyRow(row3)
                     Spacer(minLength: 10)
-                    specialKey("⌫", width: 46) { model.tapBackspace() }
+                    specialKey(systemName: "delete.left", width: 46) { model.tapBackspace() }
                 }
             }
             keySlot {
@@ -101,9 +105,9 @@ struct KeyboardView: View {
                     if needsInputModeSwitchKey {
                         GlobeButton(controller: controller).frame(width: 46, height: keyHeight)
                     }
-                    specialKey("😊", width: 46) { plane = .emoji }
+                    specialKey(systemName: "face.smiling", width: 46) { plane = .emoji }
                     spaceKey
-                    specialKey("⏎", width: 88) { model.tapEnter() }
+                    specialKey(systemName: "return", width: 88) { model.tapEnter() }
                 }
             }
         }
@@ -115,11 +119,11 @@ struct KeyboardView: View {
             keySlot { symbolRow(["-", "/", ":", ";", "(", ")", "¥", "&", "@", "\""]) }
             keySlot {
                 HStack(spacing: 6) {
-                    specialKey("#+=", width: 46, fontSize: 15) { plane = .symbols }
+                    specialKey("#+=", width: 46) { plane = .symbols }
                     Spacer(minLength: 10)
                     symbolRow(["。", "、", "?", "!", "ー", "'"])
                     Spacer(minLength: 10)
-                    specialKey("⌫", width: 46) { model.tapBackspace() }
+                    specialKey(systemName: "delete.left", width: 46) { model.tapBackspace() }
                 }
             }
             keySlot { backToLettersRow }
@@ -132,11 +136,11 @@ struct KeyboardView: View {
             keySlot { symbolRow(["_", "\\", "|", "~", "<", ">", "$", "£", "¥", "·"]) }
             keySlot {
                 HStack(spacing: 6) {
-                    specialKey("123", width: 46, fontSize: 15) { plane = .numeric }
+                    specialKey("123", width: 46) { plane = .numeric }
                     Spacer(minLength: 10)
                     symbolRow(["。", "、", "?", "!", "ー", "'"])
                     Spacer(minLength: 10)
-                    specialKey("⌫", width: 46) { model.tapBackspace() }
+                    specialKey(systemName: "delete.left", width: 46) { model.tapBackspace() }
                 }
             }
             keySlot { backToLettersRow }
@@ -163,10 +167,10 @@ struct KeyboardView: View {
             .frame(maxHeight: .infinity)
             keySlot {
                 HStack(spacing: 6) {
-                    specialKey("한글", width: 46, fontSize: 14) { plane = .letters }
-                    specialKey("⌫", width: 46) { model.tapBackspace() }
+                    specialKey("한글", width: 46) { plane = .letters }
+                    specialKey(systemName: "delete.left", width: 46) { model.tapBackspace() }
                     spaceKey
-                    specialKey("⏎", width: 88) { model.tapEnter() }
+                    specialKey(systemName: "return", width: 88) { model.tapEnter() }
                 }
             }
         }
@@ -176,10 +180,10 @@ struct KeyboardView: View {
     /// 숫자·기호 판 공용 하단 행: [한글(복귀)][😊][스페이스][⏎]
     private var backToLettersRow: some View {
         HStack(spacing: 6) {
-            specialKey("한글", width: 46, fontSize: 14) { plane = .letters }
-            specialKey("😊", width: 46) { plane = .emoji }
+            specialKey("한글", width: 46) { plane = .letters }
+            specialKey(systemName: "face.smiling", width: 46) { plane = .emoji }
             spaceKey
-            specialKey("⏎", width: 88) { model.tapEnter() }
+            specialKey(systemName: "return", width: 88) { model.tapEnter() }
         }
     }
 
@@ -230,7 +234,7 @@ struct KeyboardView: View {
 
     private var shiftKey: some View {
         Button { model.toggleShift() } label: {
-            Text(model.isShifted ? "⬆" : "⇧")
+            Image(systemName: model.isShifted ? "shift.fill" : "shift")
                 .font(.system(size: 18))
                 .foregroundColor(.primary)
                 .frame(width: 46, height: keyHeight)
@@ -243,13 +247,24 @@ struct KeyboardView: View {
 
     private var spaceKey: some View {
         Button { model.tapSpace() } label: {
-            Text(isComposingOrSelecting ? "변환" : "")
-                .font(.system(size: 16))
-                .foregroundColor(.primary)
-                .frame(maxWidth: .infinity, minHeight: keyHeight)
-                .background(keyFillColor)
-                .cornerRadius(keyCornerRadius)
-                .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+            Group {
+                if isComposingOrSelecting {
+                    Text("변환")
+                        .font(.system(size: 16))
+                        .foregroundColor(.primary)
+                } else {
+                    // 네이티브 스타일 입력 소스 배지 — 오른쪽 정렬, 옅은 회색
+                    Text("한글지")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(UIColor.tertiaryLabel))
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.trailing, 8)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: keyHeight)
+            .background(keyFillColor)
+            .cornerRadius(keyCornerRadius)
+            .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -290,11 +305,28 @@ struct KeyboardView: View {
         }
     }
 
-    private func specialKey(_ label: String, width: CGFloat = 46, fontSize: CGFloat = 18,
+    /// 텍스트 라벨 특수키(123·#+=·한글) — 네이티브도 이 셋은 텍스트로 표시.
+    private func specialKey(_ label: String, width: CGFloat = 46, fontSize: CGFloat = 16,
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: fontSize))
+                .foregroundColor(.primary)
+                .frame(width: width, height: keyHeight)
+                .background(specialKeyFillColor)
+                .cornerRadius(keyCornerRadius)
+                .shadow(color: .black.opacity(0.35), radius: 0, x: 0, y: 1)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// SF Symbol 특수키(⌫·⏎·😊 등 네이티브가 아이콘으로 그리는 키) — 색상 이모지·텍스트 글리프
+    /// 대신 시스템 심볼을 써서 네이티브 키보드와 아이콘을 동일하게 맞춘다.
+    private func specialKey(systemName: String, width: CGFloat = 46,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 18))
                 .foregroundColor(.primary)
                 .frame(width: width, height: keyHeight)
                 .background(specialKeyFillColor)

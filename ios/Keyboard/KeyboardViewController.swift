@@ -26,12 +26,16 @@ final class KeyboardViewController: UIInputViewController, TextOutput {
         addChild(hostController)
         view.addSubview(hostController.view)
         hostController.view.translatesAutoresizingMaskIntoConstraints = false
+        // 우선순위 999(required 미만) — 시스템이 내부적으로 강제하는 required(1000) 제약과
+        // 충돌해 "동시에 만족 불가" 로그와 함께 더 큰 높이로 렌더링되는 것을 방지.
+        let heightConstraint = view.heightAnchor.constraint(equalToConstant: 260)
+        heightConstraint.priority = UILayoutPriority(999)
         NSLayoutConstraint.activate([
             hostController.view.topAnchor.constraint(equalTo: view.topAnchor),
             hostController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             hostController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            view.heightAnchor.constraint(equalToConstant: 260),
+            heightConstraint,
         ])
         hostController.didMove(toParent: self)
     }
@@ -39,6 +43,12 @@ final class KeyboardViewController: UIInputViewController, TextOutput {
     override func viewWillDisappear(_ animated: Bool) {
         model.commitAll()   // 포커스 이탈 시 조합 확정
         super.viewWillDisappear(animated)
+    }
+
+    /// 실측 검증용 — 실제 렌더링된 키보드 창 높이가 260인지 콘솔에서 확인하기 위함.
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        NSLog("HanguljiKeyboard height=%.1f", view.bounds.height)
     }
 
     /// 커서 이동·필드 전환 등으로 문서가 바뀌면 호출됨. 자기 편집(TextOutput 호출) 직후
