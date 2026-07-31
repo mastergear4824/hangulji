@@ -39,14 +39,14 @@ struct KeyboardView: View {
     ]
     private let emojiColumns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 8)
 
-    // 픽셀 실측 확정 메트릭 — 진짜 네이티브 한글 키보드(시뮬레이터 캡처, 시각 검증됨)와 정합:
-    //   프레임 총높이 335(로거) / 행 top 591·645·699·753pt, 키 42.7pt 렌더 (픽셀 밴드 실측)
-    //   이 상수 세트(44/42/9/4, 합 243)가 위 렌더 값을 정확히 만들어낸다 — 변경 시 반드시 재실측할 것
+    // 픽셀 실측 캘리브레이션 (라이브 나란히 측정 — cycle-2 네이티브 vs cycle-3 한글지, 시각 확증):
+    //   네이티브 렌더: 행 top 591/645/699/753, 피치 54, 키 42.7 | 직전 우리 렌더(44/42/9/4): 600/피치51/키41.7
+    //   보정: 바 −9, 키 +1, 행간 +2 → 35/43/11/3 (합 243, 프레임 335 유지). 변경 시 반드시 재실측.
     private let totalHeight: CGFloat = 243
-    private let barHeight: CGFloat = 44
-    private let keyHeight: CGFloat = 42
-    private let rowGap: CGFloat = 9
-    private let bottomMargin: CGFloat = 4
+    private let barHeight: CGFloat = 35
+    private let keyHeight: CGFloat = 43
+    private let rowGap: CGFloat = 11
+    private let bottomMargin: CGFloat = 3
     private let keyCornerRadius: CGFloat = 4.6
 
     // 시스템 키보드 톤 — 라이트: 흰 키/회색 특수키, 다크: 진회색 키/더 진한 특수키. 액센트(블루) 사용 금지.
