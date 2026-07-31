@@ -59,6 +59,12 @@ cd hangulji
 
 > **실기기 사용:** 무료 Apple 개발자 계정으로 7일 테스트 프로비저닝 가능합니다.
 
+### Windows
+
+**코드 제로** — Google 일본어 입력의 커스텀 로마자 테이블로 한글지 방식을 사용합니다.
+
+상세한 설치 방법은 [windows/README.md](windows/README.md)를 참고하세요.
+
 ## 사용법
 
 | 키 | 조합 중 (가나 표시) | 후보 선택 중 |
@@ -137,11 +143,12 @@ spec/                           매핑 사양 (mapping.tsv, fixtures/, SPEC.md, 
 core-swift/                     공용 로직 + 엔진 어댑터 + 테스트 (순수 Swift)
 macos/                          IMKit 셸 + 후보창 + 스크립트
 ios/                            SwiftUI 자판 (App/, Keyboard/, KeyboardModelTests/, project.yml, scripts/)
-android/ windows/               예정
+windows/                        Google 일본어 입력 커스텀 테이블 (hangulji-romaji-table.txt, README.md)
+android/                        예정
 ```
 
 ```bash
-swift test --package-path core-swift        # 매핑/조합 로직 전체 테스트 (55개)
+swift test --package-path core-swift        # 매핑/조합 로직 전체 테스트 (57개)
 ./macos/scripts/install-dev.sh              # 빌드 + ~/Library/Input Methods 설치 + 프로세스 재시작
 ```
 
@@ -154,7 +161,7 @@ swift test --package-path core-swift        # 매핑/조합 로직 전체 테스
 
 - **iOS:** 완료 (시뮬레이터). 실기기는 무료 Apple 개발자 계정으로 7일 테스트 프로비저닝 가능.
 - **Android:** 같은 변환 엔진으로 지원 예정
-- **Windows:** Google 일본어 입력 커스텀 테이블(1단계)과 키 변환 브리지(2단계)로 지원 계획
+- **Windows:** 1단계 완료(Google 일본어 입력 커스텀 테이블). 실기기 검증 보류. 2단계(키 변환 브리지)는 추후 진행 예정
 
 상세한 설계는 [멀티플랫폼 설계 문서](docs/superpowers/specs/2026-07-31-hangulji-multiplatform-design.md)를 참고하세요.
 
