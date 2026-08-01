@@ -61,7 +61,7 @@ cd hangulji
 
 ### Android (에뮬레이터)
 
-**요구사항:** Android Studio (또는 Android SDK + gradle 17+), Android API 31 이상 에뮬레이터, Swift 툴체인
+**요구사항:** JDK 17+, Swift 툴체인(swiftly), macOS — 나머지(cmdline-tools, API 35 AVD)는 `android/scripts/setup-env.sh`가 설치, Swift 툴체인
 
 ```bash
 git clone https://github.com/mastergear4824/hangulji.git
@@ -72,7 +72,7 @@ source android/scripts/env.sh
 ./android/scripts/install-emu.sh
 ```
 
-**엔진 빌드는 로컬에서만 수행합니다:** 한글 변환 엔진(.so)은 macOS/Linux에서만 Swift로 크로스컴파일할 수 있어 CI에서는 검증하지 않습니다. 대신 엔진 저장소의 CI가 같은 조합을 상시 검증하고 있습니다. 엔진 .so가 없어도 **가나 입력/조합은 완전히 동작합니다** (JVM 폴백).
+**엔진 빌드는 로컬에서만 수행합니다:** 한자 변환 엔진(.so)은 macOS/Linux에서만 Swift로 크로스컴파일할 수 있어 CI에서는 검증하지 않습니다. 대신 엔진 저장소의 CI가 같은 조합을 상시 검증하고 있습니다. 엔진 .so가 없어도 **가나 입력/조합은 완전히 동작합니다** (JVM 폴백).
 
 **설치 후 활성화:**
 1. **설정 → 언어 및 입력 → 가상 키보드** → **모두 관리 → 한글지** 활성화
@@ -192,7 +192,7 @@ swift test --package-path core-swift        # 매핑/조합 로직 전체 테스
 
 - **iOS:** 완료 (시뮬레이터). 실기기는 무료 Apple 개발자 계정으로 7일 테스트 프로비저닝 가능.
 - **Android:** 완료 (에뮬레이터). 엔진 빌드는 로컬 Swift 크로스컴파일, JVM은 CI 자동화.
-- **Windows:** 1단계 완료(Google 일본어 입력 커스텀 테이블). 2단계(키 변환 브릿지) 진행 중.
+- **Windows:** 1단계 완료(Google 일본어 입력 커스텀 테이블). 2단계(키 변환 브리지)는 추후 진행 예정.
 
 상세한 설계는 [멀티플랫폼 설계 문서](docs/superpowers/specs/2026-07-31-hangulji-multiplatform-design.md)를 참고하세요.
 
