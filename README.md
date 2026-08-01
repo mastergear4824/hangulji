@@ -59,6 +59,31 @@ cd hangulji
 
 > **실기기 사용:** 무료 Apple 개발자 계정으로 7일 테스트 프로비저닝 가능합니다.
 
+### Android (에뮬레이터)
+
+**요구사항:** Android Studio (또는 Android SDK + gradle 17+), Android API 31 이상 에뮬레이터, Swift 툴체인
+
+```bash
+git clone https://github.com/mastergear4824/hangulji.git
+cd hangulji
+source android/scripts/env.sh
+./android/scripts/setup-env.sh
+./android/scripts/build-engine.sh
+./android/scripts/install-emu.sh
+```
+
+**엔진 빌드는 로컬에서만 수행합니다:** 한글 변환 엔진(.so)은 macOS/Linux에서만 Swift로 크로스컴파일할 수 있어 CI에서는 검증하지 않습니다. 대신 엔진 저장소의 CI가 같은 조합을 상시 검증하고 있습니다. 엔진 .so가 없어도 **가나 입력/조합은 완전히 동작합니다** (JVM 폴백).
+
+**설치 후 활성화:**
+1. **설정 → 언어 및 입력 → 가상 키보드** → **모두 관리 → 한글지** 활성화
+2. **기본 입력기를 한글지로 설정** (또는 개별 앱에서 입력 소스 전환)
+3. 에뮬레이터에서 아무 앱을 열고 타이핑 (예: 메모 앱)
+
+**확인 (E2E 테스트):**
+- **입력:** `토우쿄우` (한글로 타이핑)
+- **실시간 표시:** `とうきょう` (가나 자동 합성)
+- **Space 후:** `東京` (한자 변환)
+
 ### Windows
 
 **코드 제로** — Google 일본어 입력의 커스텀 로마자 테이블로 한글지 방식을 사용합니다.
@@ -144,7 +169,13 @@ core-swift/                     공용 로직 + 엔진 어댑터 + 테스트 (�
 macos/                          IMKit 셸 + 후보창 + 스크립트
 ios/                            SwiftUI 자판 (App/, Keyboard/, KeyboardModelTests/, project.yml, scripts/)
 windows/                        Google 일본어 입력 커스텀 테이블 (hangulji-romaji-table.txt, README.md)
-android/                        예정
+android/                        Kotlin IME + 모델 테스트 (JVM)
+  app/                          IME 앱 + 입력기 서비스 + JNI 래퍼
+    src/main/kotlin/            Composable UI + KanaTable + KanjiConverter 어댑터
+    src/main/jniLibs/           arm64-v8a/x86_64 .so (엔진 빌드)
+    src/test/                   모델 테스트 (JVM, 픽스처 공유)
+  engine/                        Swift 엔진 소스 (크로스컴파일용)
+  scripts/                       env.sh, setup-env.sh, build-engine.sh, install-emu.sh
 ```
 
 ```bash
@@ -160,8 +191,8 @@ swift test --package-path core-swift        # 매핑/조합 로직 전체 테스
 ## 로드맵
 
 - **iOS:** 완료 (시뮬레이터). 실기기는 무료 Apple 개발자 계정으로 7일 테스트 프로비저닝 가능.
-- **Android:** 같은 변환 엔진으로 지원 예정
-- **Windows:** 1단계 완료(Google 일본어 입력 커스텀 테이블). 실기기 검증 보류. 2단계(키 변환 브리지)는 추후 진행 예정
+- **Android:** 완료 (에뮬레이터). 엔진 빌드는 로컬 Swift 크로스컴파일, JVM은 CI 자동화.
+- **Windows:** 1단계 완료(Google 일본어 입력 커스텀 테이블). 2단계(키 변환 브릿지) 진행 중.
 
 상세한 설계는 [멀티플랫폼 설계 문서](docs/superpowers/specs/2026-07-31-hangulji-multiplatform-design.md)를 참고하세요.
 
