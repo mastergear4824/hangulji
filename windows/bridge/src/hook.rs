@@ -34,6 +34,8 @@ enum Msg {
     Boundary(u16),
     /// 백스페이스 — 화면 미표시 pending 1키 취소
     BackspacePending,
+    /// 토글 끔(Ctrl+Space) — pending을 출력 없이 버려 재활성화 시 깨끗한 상태로 시작
+    ResetPending,
 }
 
 static ENABLED: AtomicBool = AtomicBool::new(true);
@@ -65,6 +67,10 @@ pub fn run() -> windows::core::Result<()> {
                 Msg::BackspacePending => {
                     translator.pop_pending();
                     PENDING_LEN.store(translator.pending_len(), Ordering::SeqCst);
+                }
+                Msg::ResetPending => {
+                    translator.clear_pending();
+                    PENDING_LEN.store(0, Ordering::SeqCst);
                 }
             }
         }
@@ -122,6 +128,12 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
     // 2. 토글: Ctrl+Space (설계 §5.4 — IME 상태 추적 대신 자체 토글)
     if is_down && ctrl && kb.vkCode == VK_SPACE.0 as u32 {
         let was_enabled = ENABLED.fetch_xor(true, Ordering::SeqCst);
+        if was_enabled {
+            // 끄는 순간: pending을 출력 없이 버려 재활성화 시 깨끗한 상태로 시작
+            // (MINOR 수정 — 안 하면 꺼져 있던 동안의 무관한 타이핑이 재활성화 후
+            // 예전 pending과 합쳐져 엉뚱하게 변환될 수 있다)
+            let _ = TX.get().unwrap().send(Msg::ResetPending);
+        }
         println!("한글지 브리지: {}", if was_enabled { "꺼짐" } else { "켜짐" });
         return LRESULT(1);
     }
@@ -154,11 +166,23 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
     CallNextHookEx(None, code, wparam, lparam)
 }
 
-fn char_to_vk(c: char) -> VIRTUAL_KEY {
+/// 로마자 문자 1개 → (VK, 이 문자 전용 Shift 랩 필요 여부).
+/// - `'a'..='z'`·`'-'`: 그대로, Shift 랩 불필요.
+/// - `'A'..='Z'`: Automaton 규칙 3(raw 방출)의 열화 경로로 새어나올 수 있다 — 예를 들어
+///   Shift+O·Shift+P(ㅒ·ㅖ 배정은 있으나 TSV에 몸통이 없음)가 그대로 대문자로 pending에서
+///   raw 방출된다(README 한계 절 문서화). 대문자를 앱에 그대로 전달하려면 VK 자체를
+///   Shift 없이 누른 뒤 이 문자만을 위한 Shift-down/up으로 감싸 주입해야 한다(호출부
+///   `send_romaji`가 처리) — 그렇지 않으면 소문자 VK가 그대로 소문자로 들어간다.
+/// - 그 외: 생성 테이블 불변식([a-zA-Z-] 뿐)이 실제로는 지켜지지 않는 예기치 못한
+///   입력 — `None`을 돌려주고 호출부가 로그 후 건너뛴다. 이전에는 `unreachable!()`로
+///   패닉했고, 패닉은 워커 스레드를 죽여 채널 송신측(훅)이 이후 모든 키를 삼킨 채
+///   무한 대기하게 만들었다(MAJOR — 워커는 어떤 문자에도 패닉해서는 안 된다).
+fn char_to_vk(c: char) -> Option<(VIRTUAL_KEY, bool)> {
     match c {
-        'a'..='z' => VIRTUAL_KEY(c.to_ascii_uppercase() as u16), // VK_A..VK_Z == 'A'..'Z'
-        '-' => VK_OEM_MINUS,
-        _ => unreachable!("생성 테이블 출력은 [a-z-] 뿐 (gen-bridge-table이 보장)"),
+        'a'..='z' => Some((VIRTUAL_KEY(c.to_ascii_uppercase() as u16), false)), // VK_A..VK_Z == 'A'..'Z'
+        'A'..='Z' => Some((VIRTUAL_KEY(c as u16), true)), // raw-echo 열화: Shift 랩으로 대문자 유지
+        '-' => Some((VK_OEM_MINUS, false)),
+        _ => None,
     }
 }
 
@@ -181,19 +205,35 @@ fn key_event(vk: VIRTUAL_KEY, up: bool) -> INPUT {
 /// 물리 Shift가 눌린 채(예: ㄲ=Shift+R 직후 tR 연쇄) 소문자 로마자를 주입하면 대문자가
 /// 되어 IME 조합이 깨지므로, 주입 전 Shift-up / 주입 후 Shift-down으로 물리 상태를
 /// 감쌌다가 복원한다 — 실기기 검증 보류 항목(README).
+/// 대문자 raw-echo(Automaton 규칙 3 열화 경로, 예: Shift+O)는 문자 단위로 자체
+/// Shift-down/up을 감싸 대문자 그대로 주입한다 — `char_to_vk`가 이를 표시해 준다.
+/// 생성 테이블 불변식 밖의 문자(`char_to_vk`가 `None`)는 로그 후 건너뛴다 — 패닉 금지.
 fn send_romaji(romaji: &str) {
     if romaji.is_empty() {
         return;
     }
-    let mut inputs: Vec<INPUT> = Vec::with_capacity(romaji.len() * 2 + 2);
+    let mut inputs: Vec<INPUT> = Vec::with_capacity(romaji.len() * 4 + 2);
     let shift_held = key_down(VK_SHIFT);
     if shift_held {
         inputs.push(key_event(VK_SHIFT, true)); // 일시 해제
     }
     for c in romaji.chars() {
-        let vk = char_to_vk(c);
-        inputs.push(key_event(vk, false));
-        inputs.push(key_event(vk, true));
+        match char_to_vk(c) {
+            Some((vk, needs_shift)) => {
+                if needs_shift {
+                    inputs.push(key_event(VK_SHIFT, false)); // 이 문자 전용 Shift down
+                }
+                inputs.push(key_event(vk, false));
+                inputs.push(key_event(vk, true));
+                if needs_shift {
+                    inputs.push(key_event(VK_SHIFT, true)); // 이 문자 전용 Shift up
+                }
+            }
+            None => {
+                // 생성 테이블 불변식 밖의 문자 — 패닉 대신 로그하고 건너뜀(워커 생존 우선)
+                eprintln!("한글지 브리지: char_to_vk 매핑 없음, 건너뜀: {c:?}");
+            }
+        }
     }
     if shift_held {
         inputs.push(key_event(VK_SHIFT, false)); // 물리 상태 복원
@@ -207,5 +247,55 @@ fn send_vk(vk: VIRTUAL_KEY) {
     let inputs = [key_event(vk, false), key_event(vk, true)];
     unsafe {
         SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
+    }
+}
+
+// 이 모듈 전체가 `#[cfg(windows)] mod hook;`(main.rs)로만 컴파일되므로 아래 테스트는
+// Windows에서만 실행된다 — `cargo test --manifest-path windows/bridge/Cargo.toml`을
+// macOS/Linux에서 돌리면 hook.rs 자체가 빌드 그래프에서 완전히 빠지므로 아래 테스트는
+// 세지 않는다(기존 7건 그대로 유지). 실제 실행은 windows-bridge CI(windows-2022,
+// `cargo test --release`)에서 이뤄진다. 로컬에서는 타입만
+// `cargo check --manifest-path windows/bridge/Cargo.toml --target x86_64-pc-windows-msvc --tests`
+// 로 확인했다.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // MAJOR 수정 회귀 테스트: char_to_vk가 이전엔 [a-z-] 밖의 문자에서 unreachable!()로
+    // 패닉했다(워커 스레드 사망 → 훅이 키를 계속 삼킴). 지금은 무엇을 넣어도 패닉하지
+    // 않고 Option을 돌려준다.
+
+    #[test]
+    fn char_to_vk_lowercase_no_shift_wrap() {
+        let (vk, needs_shift) = char_to_vk('a').expect("a는 매핑됨");
+        assert_eq!(vk.0, b'A' as u16); // VK_A..VK_Z == 'A'..'Z'
+        assert!(!needs_shift);
+    }
+
+    #[test]
+    fn char_to_vk_uppercase_raw_echo_needs_shift_wrap() {
+        // Automaton 규칙 3(raw 방출) 경로로 Shift+O 등 대문자가 그대로 샐 수 있다
+        // (O·P: ㅒ·ㅖ 배정은 있으나 TSV에 몸통이 없어 raw로 새는 열화 경로 — README 문서화).
+        for c in ['Q', 'W', 'E', 'R', 'T', 'O', 'P'] {
+            let (vk, needs_shift) = char_to_vk(c).unwrap_or_else(|| panic!("{c}는 매핑됨"));
+            assert_eq!(vk.0, c as u16, "대문자는 자기 자신의 VK를 써야 한다: {c}");
+            assert!(needs_shift, "대문자는 Shift 랩이 필요하다: {c}");
+        }
+    }
+
+    #[test]
+    fn char_to_vk_minus_passthrough() {
+        let (vk, needs_shift) = char_to_vk('-').expect("-는 매핑됨");
+        assert_eq!(vk.0, VK_OEM_MINUS.0);
+        assert!(!needs_shift);
+    }
+
+    #[test]
+    fn char_to_vk_unknown_char_returns_none_never_panics() {
+        // 생성 테이블 불변식([a-zA-Z-] 뿐) 밖의 입력이 실수로 들어와도 워커가 죽지
+        // 않아야 한다 — 이전의 unreachable!()을 대체하는 핵심 회귀 테스트.
+        assert!(char_to_vk('!').is_none());
+        assert!(char_to_vk('0').is_none());
+        assert!(char_to_vk('가').is_none());
     }
 }

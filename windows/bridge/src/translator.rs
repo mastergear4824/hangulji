@@ -52,6 +52,13 @@ impl Automaton {
         self.pending.chars().count()
     }
 
+    /// pending을 출력 없이 버린다. flush()와 달리 커밋하지 않는다 — 토글 끔처럼
+    /// "지금까지 대기 중이던 입력은 포기하고 다음부터 깨끗하게 시작" 하는 상태
+    /// 리셋 전용이다.
+    pub fn clear_pending(&mut self) {
+        self.pending.clear();
+    }
+
     fn resolve(&mut self, at_boundary: bool) -> String {
         let mut out = String::new();
         loop {
