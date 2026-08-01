@@ -2,3 +2,4 @@
 //! Windows 셸(훅·주입)은 bin 크레이트(main.rs + hook.rs)에만 있다.
 
 pub mod table_generated;
+pub mod translator;

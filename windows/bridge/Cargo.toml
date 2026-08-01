@@ -11,3 +11,7 @@ path = "src/lib.rs"
 [[bin]]
 name = "hangulji-bridge"
 path = "src/main.rs"
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
