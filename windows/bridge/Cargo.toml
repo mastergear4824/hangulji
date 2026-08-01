@@ -1,0 +1,13 @@
+[package]
+name = "hangulji-bridge"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+
+[lib]
+name = "hangulji_bridge"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hangulji-bridge"
+path = "src/main.rs"

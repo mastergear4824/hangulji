@@ -25,6 +25,7 @@ jobs:
         run: |
           swift spec/generators/gen-swift.swift
           swift spec/generators/gen-mozc-table.swift
+          swift spec/generators/gen-bridge-table.swift
           swift spec/generators/gen-kotlin.swift
           swift run --package-path core-swift fixture-export
           git diff --exit-code -- spec windows core-swift/Sources/HanguljiCore/KanaTable.generated.swift android/app/src/main/kotlin/com/mastergear/hangulji/core/KanaTable.kt
