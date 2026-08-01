@@ -10,6 +10,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- IME 서비스는 Task 8에서 추가 -->
+        <service
+            android:name=".keyboard.HanguljiInputMethodService"
+            android:label="한글지"
+            android:permission="android.permission.BIND_INPUT_METHOD"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/method" />
+        </service>
     </application>
 </manifest>
