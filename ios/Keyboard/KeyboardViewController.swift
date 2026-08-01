@@ -17,12 +17,15 @@ final class KeyboardViewController: UIInputViewController, TextOutput {
         super.viewDidLoad()
         model.output = self
         view.backgroundColor = .clear   // 시스템 키보드 배경(블러)이 그대로 비치도록
+        // 롱프레스 팝업이 뷰 상단 밖(-y)으로 그려지므로, UIKit 계층에서 잘리지 않도록 클리핑 해제.
+        view.clipsToBounds = false
         // SwiftUI/UIKit 타이밍 이슈 회피 — 1회만 읽어서 값으로 전달 (동적 갱신 없음)
         let hostController = UIHostingController(
             rootView: KeyboardView(model: model, controller: self,
                                     needsInputModeSwitchKey: needsInputModeSwitchKey))
         host = hostController
         hostController.view.backgroundColor = .clear
+        hostController.view.clipsToBounds = false
         addChild(hostController)
         view.addSubview(hostController.view)
         hostController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -46,10 +49,12 @@ final class KeyboardViewController: UIInputViewController, TextOutput {
         super.viewWillDisappear(animated)
     }
 
-    /// 실측 검증용 — 실제 렌더링된 키보드 창 높이가 274인지 콘솔에서 확인하기 위함.
+    /// 실측 검증용 — 실제 렌더링된 키보드 창 높이와 라이트/다크 트레잇을 콘솔에서 확인하기 위함.
+    /// (특수키 색상이 사용자 눈에 다르게 보이는 문제 — 익스텐션이 다크로 오해석될 가능성을 배제하려는 목적)
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         NSLog("HanguljiKeyboard height=%.1f", view.bounds.height)
+        NSLog("HanguljiKB style=%ld", traitCollection.userInterfaceStyle.rawValue)
     }
 
     /// 커서 이동·필드 전환 등으로 문서가 바뀌면 호출됨. 자기 편집(TextOutput 호출) 직후

@@ -14,7 +14,8 @@ struct GlobeButton: UIViewRepresentable {
         button.backgroundColor = UIColor { trait in
             trait.userInterfaceStyle == .dark
                 ? UIColor(white: 0.28, alpha: 1)
-                : UIColor(red: 0.68, green: 0.70, blue: 0.74, alpha: 1)
+                // 네이티브 실측 RGB(173, 179, 189) 정확값 — KeyboardView.specialKeyFillColor와 동일하게 정합.
+                : UIColor(red: 173 / 255, green: 179 / 255, blue: 189 / 255, alpha: 1)
         }
         button.layer.cornerRadius = 4.6
         button.layer.shadowColor = UIColor.black.cgColor

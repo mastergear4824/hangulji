@@ -88,7 +88,8 @@ struct KeyboardView: View {
         Color(UIColor { trait in
             trait.userInterfaceStyle == .dark
                 ? UIColor(white: 0.28, alpha: 1)
-                : UIColor(red: 0.68, green: 0.70, blue: 0.74, alpha: 1)
+                // 네이티브 실측 RGB(173, 179, 189) 정확값 — 이전 0.68/0.70/0.74는 산술상 근사치였음.
+                : UIColor(red: 173 / 255, green: 179 / 255, blue: 189 / 255, alpha: 1)
         })
     }
 
@@ -113,7 +114,7 @@ struct KeyboardView: View {
                     let rect = proxy[data.anchor]
                     calloutPanel(data)
                         .position(x: min(max(rect.midX, 55), proxy.size.width - 55),
-                                  y: rect.minY - 34)
+                                  y: rect.minY - 26)
                 }
             }
             .allowsHitTesting(false)

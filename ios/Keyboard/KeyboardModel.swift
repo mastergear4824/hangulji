@@ -85,13 +85,29 @@ final class KeyboardModel: ObservableObject {
         }
     }
 
+    /// textDocumentProxy 연산은 비동기 배칭이라, 확정(commitText)과 삽입(insertText)을 별도
+    /// 호출로 연달아 보내면 순서가 뒤집힐 수 있다(예: "。ありがとう"처럼 구두점이 앞으로 감).
+    /// 그래서 조합/선택 확정과 함께 삽입되는 구두점·기호는 반드시 하나의 원자적 commitText로 합친다.
     func tapSymbol(_ s: String) {
-        if isSelecting { commitCandidate(at: selectedIndex) }
         if s == "ー" {
+            if isSelecting { commitCandidate(at: selectedIndex) }
             if composer.insert("-") { refreshPreview() }
             return
         }
-        if !composer.isEmpty { commitComposition() }
+        if isSelecting {
+            output?.commitText(candidates[selectedIndex] + s)
+            composer.clear()
+            candidates = []
+            selectedIndex = 0
+            preview = ""
+            return
+        }
+        if !composer.isEmpty {
+            output?.commitText(composer.markedText + s)
+            composer.clear()
+            preview = ""
+            return
+        }
         output?.insertText(s)
     }
 

@@ -160,8 +160,23 @@ final class KeyboardModelTests: XCTestCase {
         model.tapSymbol("ー")                   // 조합 중 ー는 조합에 들어감
         XCTAssertEqual(model.preview, "らー")
         XCTAssertEqual(out.marked.last, "らー")
-        model.tapSymbol("。")                   // 조합 커밋 후 。
-        XCTAssertEqual(out.committed, ["らー"])
-        XCTAssertEqual(out.inserted, ["。", "。"])
+        model.tapSymbol("。")                   // 조합 확정 + 。를 하나의 원자적 commitText로 합침(레이스 방지)
+        XCTAssertEqual(out.committed, ["らー。"])
+        XCTAssertEqual(out.inserted, ["。"])      // 두 번째 。는 더 이상 별도 insertText로 나가지 않음
+        XCTAssertEqual(model.preview, "")
+    }
+
+    /// 후보 선택 중 구두점을 누르면 후보와 구두점이 하나의 commitText로 합쳐져야 한다 —
+    /// commitCandidate + insertText를 따로 호출하면 비동기 배칭 순서가 뒤집힐 수 있었다.
+    func testSymbolWhileSelectingCommitsCandidateAndSymbolAtomically() {
+        let (model, out) = makeModel()
+        for ch in "xhdnzydn" { model.tapKey(ch) }
+        model.tapSpace()
+        let first = model.candidates[0]
+        model.tapSymbol("。")
+        XCTAssertEqual(out.committed, [first + "。"])
+        XCTAssertTrue(out.inserted.isEmpty)
+        XCTAssertTrue(model.candidates.isEmpty)
+        XCTAssertEqual(model.preview, "")
     }
 }
