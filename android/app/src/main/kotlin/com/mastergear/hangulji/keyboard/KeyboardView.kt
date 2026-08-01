@@ -63,6 +63,17 @@ private val row2 = "ㅁㄴㅇㄹㅎㅗㅓㅏㅣ".zip("asdfghjkl")
 private val row3 = "ㅋㅌㅊㅍㅠㅜㅡ".zip("zxcvbnm")
     .map { (label, latin) -> KeyDef(label.toString(), latin, label.toString(), latin) }
 
+/** ?123 판 상태 — Compose 뷰 전용(iOS KeyboardView.swift의 private enum Plane과 동일 개념).
+ *  KeyboardModel은 이 개념을 모른다 — 모든 키는 model.tapKey/tapSymbol 등 기존 계약만 사용한다. */
+private enum class Plane { LETTERS, NUMERIC, SYMBOLS }
+
+// 숫자·기호 판 슬롯 — ios/Keyboard/KeyboardView.swift numericPlane/symbolsPlane과 1:1 대응.
+private val digitRow = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
+private val numericRow2 = listOf("-", "/", ":", ";", "(", ")", "¥", "&", "@", "\"")
+private val symbolsRow1 = listOf("[", "]", "{", "}", "#", "%", "^", "*", "+", "=")
+private val symbolsRow2 = listOf("_", "\\", "|", "~", "<", ">", "$", "£", "¥", "·")
+private val symbolMidRow = listOf("。", "、", "?", "!", "ー", "'")
+
 /** 롱프레스 팝업의 한 칸 — 기본/변형(자모 입력)이거나 숫자(기호 삽입) */
 private sealed class CalloutCell(val label: String) {
     class Jamo(label: String, val latin: Char) : CalloutCell(label)
@@ -92,6 +103,7 @@ fun KeyboardScreen(model: KeyboardModel, onSwitchKeyboard: () -> Unit) {
     val textColor = if (dark) Color.White else Color(0xFF1A1B21)
     val digitHintColor = if (dark) Color(0xFFBBBBBB) else Color(0xFF48494D)
     var callout by remember { mutableStateOf<CalloutState?>(null) }
+    var plane by remember { mutableStateOf(Plane.LETTERS) }
 
     // 유휴: "한글지" · 조합/선택 중: "변환" (기능은 tapSpace로 동일 — 라벨만 Gboard 톤에 맞춤)
     val spaceLabel = if (model.preview.isEmpty() && model.candidates.isEmpty()) "한글지" else "변환"
@@ -108,35 +120,45 @@ fun KeyboardScreen(model: KeyboardModel, onSwitchKeyboard: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             CandidateBar(model, textColor)
-            KeyRow(row1, model, keyColor, textColor, digitHintColor, onCallout = { callout = it })
-            KeyRow(row2, model, keyColor, textColor, digitHintColor, onCallout = { callout = it })
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                SpecialKey(if (model.isShifted) "⬆" else "⇧", specialColor, textColor,
-                    Modifier.width(44.dp)) { model.toggleShift() }
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    for (key in row3) {
-                        KeyCap(key, model, keyColor, textColor, digitHintColor, Modifier.weight(1f),
-                            onCallout = { callout = it })
+            when (plane) {
+                Plane.LETTERS -> {
+                    KeyRow(row1, model, keyColor, textColor, digitHintColor, onCallout = { callout = it })
+                    KeyRow(row2, model, keyColor, textColor, digitHintColor, onCallout = { callout = it })
+                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        SpecialKey(if (model.isShifted) "⬆" else "⇧", specialColor, textColor,
+                            Modifier.width(44.dp)) { model.toggleShift() }
+                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            for (key in row3) {
+                                KeyCap(key, model, keyColor, textColor, digitHintColor, Modifier.weight(1f),
+                                    onCallout = { callout = it })
+                            }
+                        }
+                        SpecialKey("⌫", specialColor, textColor, Modifier.width(44.dp)) {
+                            model.tapBackspace()
+                        }
                     }
+                    // Gboard 순서: [?123][ー][🌐][space][。][enter-원형] — ?123은 숫자판 진입.
+                    SymbolBottomRow("?123", { plane = Plane.NUMERIC; callout = null },
+                        model, keyColor, specialColor, enterColor, textColor, spaceLabel, onSwitchKeyboard)
                 }
-                SpecialKey("⌫", specialColor, textColor, Modifier.width(44.dp)) {
-                    model.tapBackspace()
+                Plane.NUMERIC -> {
+                    // ios/Keyboard/KeyboardView.swift numericPlane과 동일 구조(1-0 / 기호 / #+= 전환 / 복귀).
+                    SymbolRow(digitRow, model, keyColor, textColor)
+                    SymbolRow(numericRow2, model, keyColor, textColor)
+                    SymbolThirdRow("#+=", { plane = Plane.SYMBOLS },
+                        model, keyColor, specialColor, textColor)
+                    SymbolBottomRow("한글", { plane = Plane.LETTERS },
+                        model, keyColor, specialColor, enterColor, textColor, spaceLabel, onSwitchKeyboard)
                 }
-            }
-            // Gboard 순서: [?123][ー][🌐][space][。][enter-원형] — 우리 기능을 Gboard 슬롯에 배치.
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                SpecialKey("?123", specialColor, textColor, Modifier.width(44.dp)) {
-                    // 숫자/기호 레이어 자체는 브리프 범위 밖(KeyboardModel 불변) — Gboard 자리만 확보.
+                Plane.SYMBOLS -> {
+                    // ios/Keyboard/KeyboardView.swift symbolsPlane과 동일 구조(123 전환 / 복귀는 numeric과 동일).
+                    SymbolRow(symbolsRow1, model, keyColor, textColor)
+                    SymbolRow(symbolsRow2, model, keyColor, textColor)
+                    SymbolThirdRow("123", { plane = Plane.NUMERIC },
+                        model, keyColor, specialColor, textColor)
+                    SymbolBottomRow("한글", { plane = Plane.LETTERS },
+                        model, keyColor, specialColor, enterColor, textColor, spaceLabel, onSwitchKeyboard)
                 }
-                SpecialKey("ー", specialColor, textColor, Modifier.width(40.dp)) {
-                    model.tapSymbol("ー")
-                }
-                SpecialKey("🌐", specialColor, textColor, Modifier.width(44.dp), onSwitchKeyboard)
-                SpecialKey(spaceLabel, keyColor, textColor, Modifier.weight(1f)) { model.tapSpace() }
-                SpecialKey("。", specialColor, textColor, Modifier.width(40.dp)) {
-                    model.tapSymbol("。")
-                }
-                EnterKey(enterColor, textColor, Modifier.width(56.dp)) { model.tapEnter() }
             }
         }
         callout?.let { CalloutPopup(it, keyColor, textColor) }
@@ -184,6 +206,69 @@ private fun KeyRow(
         for (key in keys) {
             KeyCap(key, model, keyColor, textColor, digitHintColor, Modifier.weight(1f), onCallout)
         }
+    }
+}
+
+/** 숫자·기호 판의 문자 키 — 조합과 무관하므로 전부 model.tapSymbol로 전송한다(ー는 tapSymbol
+ *  내부에서 조합에 들어가도록 특별 처리되어 있어 그대로 재사용됨 — model.tapSymbol("ー") 참조).
+ *  롱프레스 팝업 없음(Gboard 실측·iOS symbolRow 모두 숫자·기호 키에는 변형 팝업이 없다). */
+@Composable
+private fun SymbolKey(
+    symbol: String, model: KeyboardModel, keyColor: Color, textColor: Color, modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.height(47.dp)
+            .background(keyColor, RoundedCornerShape(6.dp))
+            .clickable { model.tapSymbol(symbol) },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(symbol, color = textColor, fontSize = 20.sp, textAlign = TextAlign.Center)
+    }
+}
+
+@Composable
+private fun SymbolRow(symbols: List<String>, model: KeyboardModel, keyColor: Color, textColor: Color) {
+    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        for (s in symbols) {
+            SymbolKey(s, model, keyColor, textColor, Modifier.weight(1f))
+        }
+    }
+}
+
+/** 숫자·기호 판 공용 3행: [좌측 전환키] 。、?!ー' [⌫] — iOS numericPlane/symbolsPlane 3행과 동일
+ *  구조. 좌측 키만 판마다 다르다(숫자판="#+="→기호판 진입, 기호판="123"→숫자판 진입). */
+@Composable
+private fun SymbolThirdRow(
+    leftLabel: String, onLeft: () -> Unit,
+    model: KeyboardModel, keyColor: Color, specialColor: Color, textColor: Color,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        SpecialKey(leftLabel, specialColor, textColor, Modifier.width(44.dp), onLeft)
+        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            for (s in symbolMidRow) {
+                SymbolKey(s, model, keyColor, textColor, Modifier.weight(1f))
+            }
+        }
+        SpecialKey("⌫", specialColor, textColor, Modifier.width(44.dp)) { model.tapBackspace() }
+    }
+}
+
+/** 세 판(글자·숫자·기호) 공용 하단 행: [좌측 전환/복귀키][ー][🌐][space][。][enter-원형].
+ *  글자판에서는 좌측이 "?123"(숫자판 진입), 숫자·기호판에서는 "한글"(글자판 복귀)만 다르고
+ *  나머지 네 칸(ー·🌐·space·。·enter)은 세 판 전부 동일 — iOS backToLettersRow와 대응. */
+@Composable
+private fun SymbolBottomRow(
+    leftLabel: String, onLeft: () -> Unit,
+    model: KeyboardModel, keyColor: Color, specialColor: Color, enterColor: Color, textColor: Color,
+    spaceLabel: String, onSwitchKeyboard: () -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        SpecialKey(leftLabel, specialColor, textColor, Modifier.width(44.dp), onLeft)
+        SpecialKey("ー", specialColor, textColor, Modifier.width(40.dp)) { model.tapSymbol("ー") }
+        SpecialKey("🌐", specialColor, textColor, Modifier.width(44.dp), onSwitchKeyboard)
+        SpecialKey(spaceLabel, keyColor, textColor, Modifier.weight(1f)) { model.tapSpace() }
+        SpecialKey("。", specialColor, textColor, Modifier.width(40.dp)) { model.tapSymbol("。") }
+        EnterKey(enterColor, textColor, Modifier.width(56.dp)) { model.tapEnter() }
     }
 }
 
