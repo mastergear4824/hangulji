@@ -90,6 +90,11 @@ source android/scripts/env.sh
 
 상세한 설치 방법은 [windows/README.md](windows/README.md)를 참고하세요.
 
+**설치형 브리지(2단계)** — 상주 프로그램(`hangulji-bridge.exe`)이 2벌식 키를 로마자로
+변환해 MS-IME에 주입합니다. 테이블 교체 없이 시스템 기본 일본어 IME를 그대로 씁니다.
+빌드·사용법·한계는 [windows/bridge/README.md](windows/bridge/README.md)를 참고하세요
+(CI 빌드 + 변환 로직 conformance까지 검증됨, 실기기 실행 검증은 보류).
+
 ## 사용법
 
 | 키 | 조합 중 (가나 표시) | 후보 선택 중 |
@@ -168,7 +173,7 @@ spec/                           매핑 사양 (mapping.tsv, fixtures/, SPEC.md, 
 core-swift/                     공용 로직 + 엔진 어댑터 + 테스트 (순수 Swift)
 macos/                          IMKit 셸 + 후보창 + 스크립트
 ios/                            SwiftUI 자판 (App/, Keyboard/, KeyboardModelTests/, project.yml, scripts/)
-windows/                        Google 일본어 입력 커스텀 테이블 (hangulji-romaji-table.txt, README.md)
+windows/                        1단계: Google IME 커스텀 테이블 / 2단계: 키 변환 브리지 (bridge/, Rust)
 android/                        Kotlin IME + 모델 테스트 (JVM)
   app/                          IME 앱 + 입력기 서비스 + JNI 래퍼
     src/main/kotlin/            Composable UI + KanaTable + KanjiConverter 어댑터
@@ -180,6 +185,7 @@ android/                        Kotlin IME + 모델 테스트 (JVM)
 
 ```bash
 swift test --package-path core-swift        # 매핑/조합 로직 전체 테스트 (57개)
+cargo test --manifest-path windows/bridge/Cargo.toml   # Windows 브리지 변환 로직 (OS 무관)
 ./macos/scripts/install-dev.sh              # 빌드 + ~/Library/Input Methods 설치 + 프로세스 재시작
 ```
 
@@ -192,7 +198,7 @@ swift test --package-path core-swift        # 매핑/조합 로직 전체 테스
 
 - **iOS:** 완료 (시뮬레이터). 실기기는 무료 Apple 개발자 계정으로 7일 테스트 프로비저닝 가능.
 - **Android:** 완료 (에뮬레이터). 엔진 빌드는 로컬 Swift 크로스컴파일, JVM은 CI 자동화.
-- **Windows:** 1단계 완료(Google 일본어 입력 커스텀 테이블). 2단계(키 변환 브리지)는 추후 진행 예정.
+- **Windows:** 1단계 완료(Google 일본어 입력 커스텀 테이블) + 2단계 완료(키 변환 브리지 — CI에서 exe 빌드·픽스처 conformance 검증). 실기기 실행 검증은 Windows 기기 확보 시.
 
 상세한 설계는 [멀티플랫폼 설계 문서](docs/superpowers/specs/2026-07-31-hangulji-multiplatform-design.md)를 참고하세요.
 

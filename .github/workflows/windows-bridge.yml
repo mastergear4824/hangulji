@@ -1,0 +1,34 @@
+name: windows-bridge
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  bridge:
+    runs-on: windows-2022
+    defaults:
+      run:
+        working-directory: windows/bridge
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust 툴체인 확인 (러너 프리인스톨 stable-x86_64-pc-windows-msvc)
+        run: |
+          rustup default stable
+          rustc --version
+          cargo --version
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            windows/bridge/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('windows/bridge/Cargo.lock') }}
+      - name: 변환 로직 픽스처 테스트 (SP5 완료 정의 후반 — translator + conformance)
+        run: cargo test --release
+      - name: 브리지 exe 빌드 (SP5 완료 정의 전반)
+        run: cargo build --release
+      - name: exe 아티팩트 업로드 (서명 없음)
+        uses: actions/upload-artifact@v4
+        with:
+          name: hangulji-bridge-exe
+          path: windows/bridge/target/release/hangulji-bridge.exe
